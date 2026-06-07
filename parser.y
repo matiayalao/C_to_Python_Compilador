@@ -4,32 +4,35 @@
 #include <string.h>
 
 /* Importamos tu lógica rústica de la tabla de símbolos */
-#include "tabla_simbolos.c"
+#include "tabla_de_simbolos.c"
 
 void yyerror(const char *s);
 int yylex(void); 
 
 int tipo_actual = 0;
+
+extern FILE *yyin; // Variable que usa Lex para leer la entrada         
+FILE *yyout_py;    // Nuestra variable para escribir la salida Python 
+
 %}
 
-/* CONFIGURAMOS LA UNION PARA TRABAJAR CON STRINGS*/
-%asis
+/* union: Su función en el mundo es redefinir la "caja de encomiendas" (yylval) 
+para que tenga compartimentos de distintos tipos de datos.*/
 %union {
-    char *nombre;     /* Para transportar el nombre de los identificadores */
-    double val_num;   /* Por si usás números más adelante */
+    char *nombre;     
+    double val_num;   
 }
 
 /* DECLARAMOS LOS TOKENS Y LE ASIGNAMOS EL TIPO DE LA UNION A ID */
 %token IF ELSE WHILE RETURN INT FLOAT CHAR CONST DOUBLE
 %token <nombre> ID
+%token <val_num> NUMERO 
 
 %%
 
-programa: bloque
-        ;
-
-/* REGLA BLOQUE: Maneja el Scope de forma inline y rústica aquí mismo */
-bloque: '{' {
+programa : instrucciones
+         ;
+bloque   : '{' {
                 /* Acción intermedia: Al abrir '{', creamos entorno local */
                 struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
                 nuevo->tabla_simbolos = NULL;
@@ -47,42 +50,71 @@ bloque: '{' {
             }
       ;
 
-instrucciones: instrucciones instruccion 
+instrucciones : instrucciones instruccion 
              | /* vacío (regla lambda) */
              ;
 
 /* AQUÍ ESTÁ EL SECRETO: Una instrucción puede ser una declaración O un bloque nuevo */
-instruccion: declaracion 
+instruccion : declaracion 
            | bloque
            ;
 
-declaracion: tipo lista_ids ';'
+declaracion : tipo lista_ids ';'
            ;
 
-/* Corregidos los puntos y comas internos de C */
-tipo: INT    { tipo_actual = T_INT; }
+tipo : INT    { tipo_actual = T_INT; }
     | FLOAT  { tipo_actual = T_FLOAT; }
     | CHAR   { tipo_actual = T_CHAR; }
     | DOUBLE { tipo_actual = T_DOUBLE; }
     ;
 
-lista_ids: ID {
+lista_ids : ID {
+                
                 /* Caso base: int x; -> El nombre está en $1 */
-                struct entrada_tabla *entrada = declara_variable($1);
+                struct entrada_tabla *entrada = declarar_variable($1);
+            
                 if (entrada == NULL){
                     printf("Error semántico: la variable '%s' ya fue declarada en este bloque.\n", $1);
                 } else {
                     entrada->tipo_base = tipo_actual;
+                    // --- GENERACIÓN DE CÓDIGO PYTHON ---
+    			    fprintf(yyout_py, "%s = None\n", $1);
                 }
                 free($1); /* Limpiamos el strdup que vino de Flex */
          }
          | lista_ids ',' ID {
                 /* Caso recursivo: int x, y; -> El nombre está en $3 */
-                struct entrada_tabla *entrada = declara_variable($3);
+                struct entrada_tabla *entrada = declarar_variable($3);
                 if (entrada == NULL){
                     printf("Error semántico: la variable '%s' ya fue declarada en este bloque.\n", $3);
                 } else {
                     entrada->tipo_base = tipo_actual;
+                    // --- GENERACIÓN DE CÓDIGO PYTHON ---
+                    fprintf(yyout_py, "%s = None\n", $3);
+                }
+                free($3);
+         }
+         | ID '=' NUMERO {
+            struct entrada_tabla *entrada = declarar_variable($1);
+            
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' ya fue declarada en este bloque.\n", $1);
+                } else {
+                    entrada->tipo_base = tipo_actual;
+                    // --- GENERACIÓN DE CÓDIGO PYTHON ---
+    			    fprintf(yyout_py, "%s = %g\n", $1, $3);
+                }
+                free($1);
+         }
+         | lista_ids ',' ID '=' NUMERO {
+                /* Caso recursivo: int x, y; -> El nombre está en $3 */
+                struct entrada_tabla *entrada = declarar_variable($3);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' ya fue declarada en este bloque.\n", $3);
+                } else {
+                    entrada->tipo_base = tipo_actual;
+                    // --- GENERACIÓN DE CÓDIGO PYTHON ---
+                    fprintf(yyout_py, "%s = %g\n", $3, $5);
                 }
                 free($3);
          }
@@ -96,3 +128,43 @@ lista_ids: ID {
 void yyerror(const char *s) {
     fprintf(stderr, "Error sintáctico: %s\n", s);
 }
+
+
+int main(int argc, char **argv) {                                       
+        if (argc != 3) {                                                    
+            printf("Uso: %s <archivo_entrada.c> <archivo_salida.py>\n",     
+  argv[0]);                                                                 
+            return 1;                                                       
+        }                                                                   
+                                                                            
+        // 1. Abrimos el archivo .c de entrada y se lo pasamos a Lex        
+        yyin = fopen(argv[1], "r");                                         
+        if (!yyin) {                                                        
+            printf("No se pudo abrir el archivo %s\n", argv[1]);            
+            return 1;                                                       
+        }                                                                   
+                                                                            
+        // 2. Abrimos/creamos el archivo .py de salida                      
+        yyout_py = fopen(argv[2], "w");                                     
+        if (!yyout_py) {                                                    
+            printf("No se pudo crear el archivo %s\n", argv[2]);            
+            fclose(yyin);                                                   
+            return 1;                                                       
+        }                                                                   
+                                                                            
+        // 3. Iniciamos el proceso de análisis
+        entorno_actual = (struct Entorno *) malloc(sizeof(struct Entorno));
+        entorno_actual->tabla_simbolos = NULL;
+        entorno_actual->cantidad_simbolos = 0;
+        entorno_actual->capacidad_tabla = 0;
+        entorno_actual->padre = NULL;
+
+        printf("Iniciando compilacion de %s a %s...\n", argv[1], argv[2]);  
+        yyparse();                                                          
+        printf("Compilacion finalizada.\n");                                
+                                                                            
+        // 4. Cerramos los archivos                                         
+        fclose(yyin);                                                       
+        fclose(yyout_py);                                                   
+        return 0;                                                           
+    }          

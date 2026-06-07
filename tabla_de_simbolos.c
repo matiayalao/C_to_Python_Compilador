@@ -104,7 +104,3 @@ struct entrada_tabla *declarar_variable(char *nombre_buscado) {
     entorno_actual->cantidad_simbolos++; // Ahora tenemos una fila más ocupada
     return nueva_fila; // Devolvemos el puntero a la nueva fila creada
 }
-
-int main(){
-    return 0;
-}

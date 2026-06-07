@@ -1,5 +1,4 @@
 %{
-#include "y.tab.h"  /* Acá Yacc le va a pasar a Flex la lista de tokens (INT, FLOAT, ID...) */
 #include <string.h>
 %}
 
@@ -31,6 +30,7 @@ numero  {digito}+(\.{digito}+)?
 "*"         { return('*'); }
 "="         { return('='); }
 ";"         { return(';'); }
+","         { return(','); }
 
 .           { printf("Error léxico: caracter inválido %s\n", yytext); }
 %%
