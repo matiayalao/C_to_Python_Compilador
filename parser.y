@@ -10,6 +10,9 @@ void yyerror(const char *s);
 int yylex(void); 
 
 int tipo_actual = 0;
+int es_constante_actual = 0;
+
+extern int yylineno; //contador de lineas
 
 extern FILE *yyin; // Variable que usa Lex para leer la entrada         
 FILE *yyout_py;    // Nuestra variable para escribir la salida Python 
@@ -32,6 +35,7 @@ para que tenga compartimentos de distintos tipos de datos.*/
 
 programa : instrucciones
          ;
+
 bloque   : '{' {
                 /* Acción intermedia: Al abrir '{', creamos entorno local */
                 struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
@@ -59,8 +63,15 @@ instruccion : declaracion
            | bloque
            ;
 
-declaracion : tipo lista_ids ';'
-           ;
+declaracion : prefijo_declaracion lista_ids ';' { es_constante_actual = 0; }
+            | CONST lista_ids ';' {
+                printf("[Error de Sintaxis] Línea %d: Definiste una constante pero omitiste el tipo de dato (ej: const int ...).\n", yylineno);
+            }
+            ;
+
+prefijo_declaracion : tipo             { es_constante_actual = 0; }
+                    | CONST tipo       { es_constante_actual = 1; } /* ¡Se activa ANTES de lista_ids! */
+                    ;
 
 tipo : INT    { tipo_actual = T_INT; }
     | FLOAT  { tipo_actual = T_FLOAT; }
@@ -77,6 +88,11 @@ lista_ids : ID {
                     printf("Error semántico: la variable '%s' ya fue declarada en este bloque.\n", $1);
                 } else {
                     entrada->tipo_base = tipo_actual;
+
+                    if(es_constante_actual == 1){
+                        entrada->es_constante = 1;
+                    }
+
                     // --- GENERACIÓN DE CÓDIGO PYTHON ---
     			    fprintf(yyout_py, "%s = None\n", $1);
                 }
@@ -89,6 +105,10 @@ lista_ids : ID {
                     printf("Error semántico: la variable '%s' ya fue declarada en este bloque.\n", $3);
                 } else {
                     entrada->tipo_base = tipo_actual;
+
+                    if(es_constante_actual == 1){
+                        entrada->es_constante = 1;
+                    }
                     // --- GENERACIÓN DE CÓDIGO PYTHON ---
                     fprintf(yyout_py, "%s = None\n", $3);
                 }
@@ -101,6 +121,9 @@ lista_ids : ID {
                     printf("Error semántico: la variable '%s' ya fue declarada en este bloque.\n", $1);
                 } else {
                     entrada->tipo_base = tipo_actual;
+                    if(es_constante_actual == 1){
+                        entrada->es_constante = 1;
+                    }
                     // --- GENERACIÓN DE CÓDIGO PYTHON ---
     			    fprintf(yyout_py, "%s = %g\n", $1, $3);
                 }
@@ -113,6 +136,10 @@ lista_ids : ID {
                     printf("Error semántico: la variable '%s' ya fue declarada en este bloque.\n", $3);
                 } else {
                     entrada->tipo_base = tipo_actual;
+
+                    if(es_constante_actual == 1){
+                        entrada->es_constante = 1;
+                    }
                     // --- GENERACIÓN DE CÓDIGO PYTHON ---
                     fprintf(yyout_py, "%s = %g\n", $3, $5);
                 }
@@ -126,7 +153,7 @@ lista_ids : ID {
 #include "lex.yy.c"
 
 void yyerror(const char *s) {
-    fprintf(stderr, "Error sintáctico: %s\n", s);
+    fprintf(stderr, "Error sintáctico en la línea %d: %s\n", yylineno, s);
 }
 
 

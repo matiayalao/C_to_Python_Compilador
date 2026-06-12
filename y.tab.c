@@ -80,12 +80,15 @@ void yyerror(const char *s);
 int yylex(void); 
 
 int tipo_actual = 0;
+int es_constante_actual = 0;
+
+extern int yylineno; //contador de lineas
 
 extern FILE *yyin; // Variable que usa Lex para leer la entrada         
 FILE *yyout_py;    // Nuestra variable para escribir la salida Python 
 
 
-#line 89 "y.tab.c"
+#line 92 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -161,12 +164,12 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 21 "parser.y"
+#line 24 "parser.y"
 
     char *nombre;     
     double val_num;   
 
-#line 170 "y.tab.c"
+#line 173 "y.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -212,8 +215,9 @@ enum yysymbol_kind_t
   YYSYMBOL_instrucciones = 23,             /* instrucciones  */
   YYSYMBOL_instruccion = 24,               /* instruccion  */
   YYSYMBOL_declaracion = 25,               /* declaracion  */
-  YYSYMBOL_tipo = 26,                      /* tipo  */
-  YYSYMBOL_lista_ids = 27                  /* lista_ids  */
+  YYSYMBOL_prefijo_declaracion = 26,       /* prefijo_declaracion  */
+  YYSYMBOL_tipo = 27,                      /* tipo  */
+  YYSYMBOL_lista_ids = 28                  /* lista_ids  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -541,16 +545,16 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  3
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   21
+#define YYLAST   31
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  19
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  9
+#define YYNNTS  10
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  17
+#define YYNRULES  20
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  25
+#define YYNSTATES  30
 
 /* YYMAXUTOK -- Last valid token kind.  */
 #define YYMAXUTOK   268
@@ -598,10 +602,11 @@ static const yytype_int8 yytranslate[] =
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_int8 yyrline[] =
+static const yytype_uint8 yyrline[] =
 {
-       0,    33,    33,    35,    35,    53,    54,    58,    59,    62,
-      65,    66,    67,    68,    71,    85,    97,   109
+       0,    36,    36,    39,    39,    57,    58,    62,    63,    66,
+      67,    72,    73,    76,    77,    78,    79,    82,   101,   117,
+     132
 };
 #endif
 
@@ -620,8 +625,8 @@ static const char *const yytname[] =
   "\"end of file\"", "error", "\"invalid token\"", "IF", "ELSE", "WHILE",
   "RETURN", "INT", "FLOAT", "CHAR", "CONST", "DOUBLE", "ID", "NUMERO",
   "'{'", "'}'", "';'", "','", "'='", "$accept", "programa", "bloque",
-  "$@1", "instrucciones", "instruccion", "declaracion", "tipo",
-  "lista_ids", YY_NULLPTR
+  "$@1", "instrucciones", "instruccion", "declaracion",
+  "prefijo_declaracion", "tipo", "lista_ids", YY_NULLPTR
 };
 
 static const char *
@@ -645,9 +650,9 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-     -12,     3,     2,   -12,   -12,   -12,   -12,   -12,   -12,   -12,
-     -12,   -12,     0,   -12,    -4,   -11,    -7,     4,   -12,     6,
-     -12,   -12,    -3,     7,   -12
+     -12,    20,     2,   -12,   -12,   -12,   -12,    10,   -12,   -12,
+     -12,   -12,   -12,    11,   -12,     6,   -12,   -11,   -12,    -2,
+      12,   -12,    14,    -7,   -12,   -12,     9,   -12,    15,   -12
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -655,21 +660,21 @@ static const yytype_int8 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       6,     0,     2,     1,    10,    11,    12,    13,     3,     8,
-       5,     7,     0,     6,    14,     0,     0,     0,     9,     0,
-       4,    16,    15,     0,    17
+       6,     0,     2,     1,    13,    14,    15,     0,    16,     3,
+       8,     5,     7,     0,    11,    17,    12,     0,     6,     0,
+       0,    10,     0,     0,     9,    19,    18,     4,     0,    20
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -12,   -12,   -12,   -12,     8,   -12,   -12,   -12,   -12
+     -12,   -12,   -12,   -12,    13,   -12,   -12,   -12,    22,    17
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     1,     9,    13,     2,    10,    11,    12,    15
+       0,     1,    10,    18,     2,    11,    12,    13,    14,    17
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -677,39 +682,43 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-       4,     5,     6,     3,     7,    18,    19,     8,    20,     4,
-       5,     6,    14,     7,    17,    23,     8,    21,    22,     0,
-      24,    16
+       4,     5,     6,     7,     8,    21,    22,     9,    27,     4,
+       5,     6,     7,     8,    24,    22,     9,     4,     5,     6,
+       3,     8,    15,    15,    20,    25,    26,    28,    29,    16,
+      19,    23
 };
 
 static const yytype_int8 yycheck[] =
 {
-       7,     8,     9,     0,    11,    16,    17,    14,    15,     7,
-       8,     9,    12,    11,    18,    18,    14,    13,    12,    -1,
-      13,    13
+       7,     8,     9,    10,    11,    16,    17,    14,    15,     7,
+       8,     9,    10,    11,    16,    17,    14,     7,     8,     9,
+       0,    11,    12,    12,    18,    13,    12,    18,    13,     7,
+      13,    18
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,    20,    23,     0,     7,     8,     9,    11,    14,    21,
-      24,    25,    26,    22,    12,    27,    23,    18,    16,    17,
-      15,    13,    12,    18,    13
+       0,    20,    23,     0,     7,     8,     9,    10,    11,    14,
+      21,    24,    25,    26,    27,    12,    27,    28,    22,    28,
+      18,    16,    17,    23,    16,    13,    12,    15,    18,    13
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
        0,    19,    20,    22,    21,    23,    23,    24,    24,    25,
-      26,    26,    26,    26,    27,    27,    27,    27
+      25,    26,    26,    27,    27,    27,    27,    28,    28,    28,
+      28
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
        0,     2,     1,     0,     4,     2,     0,     1,     1,     3,
-       1,     1,     1,     1,     1,     3,     3,     5
+       3,     1,     2,     1,     1,     1,     1,     1,     3,     3,
+       5
 };
 
 
@@ -1173,7 +1182,7 @@ yyreduce:
   switch (yyn)
     {
   case 3: /* $@1: %empty  */
-#line 35 "parser.y"
+#line 39 "parser.y"
                {
                 /* Acción intermedia: Al abrir '{', creamos entorno local */
                 struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
@@ -1183,11 +1192,11 @@ yyreduce:
                 nuevo->padre = entorno_actual; 
                 entorno_actual = nuevo; 
             }
-#line 1187 "y.tab.c"
+#line 1196 "y.tab.c"
     break;
 
   case 4: /* bloque: '{' $@1 instrucciones '}'  */
-#line 44 "parser.y"
+#line 48 "parser.y"
                           {
                 /* Acción final: Al cerrar '}', regresamos de nivel al padre */
                 struct Entorno *viejo = entorno_actual;
@@ -1195,35 +1204,61 @@ yyreduce:
                 
                 /* Opcional: Podés liberar la memoria de 'viejo' aquí si querés */
             }
-#line 1199 "y.tab.c"
+#line 1208 "y.tab.c"
     break;
 
-  case 10: /* tipo: INT  */
-#line 65 "parser.y"
-              { tipo_actual = T_INT; }
-#line 1205 "y.tab.c"
-    break;
-
-  case 11: /* tipo: FLOAT  */
+  case 9: /* declaracion: prefijo_declaracion lista_ids ';'  */
 #line 66 "parser.y"
-             { tipo_actual = T_FLOAT; }
-#line 1211 "y.tab.c"
+                                                { es_constante_actual = 0; }
+#line 1214 "y.tab.c"
     break;
 
-  case 12: /* tipo: CHAR  */
+  case 10: /* declaracion: CONST lista_ids ';'  */
 #line 67 "parser.y"
+                                  {
+                printf("[Error de Sintaxis] Línea %d: Definiste una constante pero omitiste el tipo de dato (ej: const int ...).\n", yylineno);
+            }
+#line 1222 "y.tab.c"
+    break;
+
+  case 11: /* prefijo_declaracion: tipo  */
+#line 72 "parser.y"
+                                       { es_constante_actual = 0; }
+#line 1228 "y.tab.c"
+    break;
+
+  case 12: /* prefijo_declaracion: CONST tipo  */
+#line 73 "parser.y"
+                                       { es_constante_actual = 1; }
+#line 1234 "y.tab.c"
+    break;
+
+  case 13: /* tipo: INT  */
+#line 76 "parser.y"
+              { tipo_actual = T_INT; }
+#line 1240 "y.tab.c"
+    break;
+
+  case 14: /* tipo: FLOAT  */
+#line 77 "parser.y"
+             { tipo_actual = T_FLOAT; }
+#line 1246 "y.tab.c"
+    break;
+
+  case 15: /* tipo: CHAR  */
+#line 78 "parser.y"
              { tipo_actual = T_CHAR; }
-#line 1217 "y.tab.c"
+#line 1252 "y.tab.c"
     break;
 
-  case 13: /* tipo: DOUBLE  */
-#line 68 "parser.y"
+  case 16: /* tipo: DOUBLE  */
+#line 79 "parser.y"
              { tipo_actual = T_DOUBLE; }
-#line 1223 "y.tab.c"
+#line 1258 "y.tab.c"
     break;
 
-  case 14: /* lista_ids: ID  */
-#line 71 "parser.y"
+  case 17: /* lista_ids: ID  */
+#line 82 "parser.y"
                {
                 
                 /* Caso base: int x; -> El nombre está en $1 */
@@ -1233,16 +1268,21 @@ yyreduce:
                     printf("Error semántico: la variable '%s' ya fue declarada en este bloque.\n", (yyvsp[0].nombre));
                 } else {
                     entrada->tipo_base = tipo_actual;
+
+                    if(es_constante_actual == 1){
+                        entrada->es_constante = 1;
+                    }
+
                     // --- GENERACIÓN DE CÓDIGO PYTHON ---
     			    fprintf(yyout_py, "%s = None\n", (yyvsp[0].nombre));
                 }
                 free((yyvsp[0].nombre)); /* Limpiamos el strdup que vino de Flex */
          }
-#line 1242 "y.tab.c"
+#line 1282 "y.tab.c"
     break;
 
-  case 15: /* lista_ids: lista_ids ',' ID  */
-#line 85 "parser.y"
+  case 18: /* lista_ids: lista_ids ',' ID  */
+#line 101 "parser.y"
                             {
                 /* Caso recursivo: int x, y; -> El nombre está en $3 */
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[0].nombre));
@@ -1250,16 +1290,20 @@ yyreduce:
                     printf("Error semántico: la variable '%s' ya fue declarada en este bloque.\n", (yyvsp[0].nombre));
                 } else {
                     entrada->tipo_base = tipo_actual;
+
+                    if(es_constante_actual == 1){
+                        entrada->es_constante = 1;
+                    }
                     // --- GENERACIÓN DE CÓDIGO PYTHON ---
                     fprintf(yyout_py, "%s = None\n", (yyvsp[0].nombre));
                 }
                 free((yyvsp[0].nombre));
          }
-#line 1259 "y.tab.c"
+#line 1303 "y.tab.c"
     break;
 
-  case 16: /* lista_ids: ID '=' NUMERO  */
-#line 97 "parser.y"
+  case 19: /* lista_ids: ID '=' NUMERO  */
+#line 117 "parser.y"
                          {
             struct entrada_tabla *entrada = declarar_variable((yyvsp[-2].nombre));
             
@@ -1267,16 +1311,19 @@ yyreduce:
                     printf("Error semántico: la variable '%s' ya fue declarada en este bloque.\n", (yyvsp[-2].nombre));
                 } else {
                     entrada->tipo_base = tipo_actual;
+                    if(es_constante_actual == 1){
+                        entrada->es_constante = 1;
+                    }
                     // --- GENERACIÓN DE CÓDIGO PYTHON ---
     			    fprintf(yyout_py, "%s = %g\n", (yyvsp[-2].nombre), (yyvsp[0].val_num));
                 }
                 free((yyvsp[-2].nombre));
          }
-#line 1276 "y.tab.c"
+#line 1323 "y.tab.c"
     break;
 
-  case 17: /* lista_ids: lista_ids ',' ID '=' NUMERO  */
-#line 109 "parser.y"
+  case 20: /* lista_ids: lista_ids ',' ID '=' NUMERO  */
+#line 132 "parser.y"
                                        {
                 /* Caso recursivo: int x, y; -> El nombre está en $3 */
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[-2].nombre));
@@ -1284,16 +1331,20 @@ yyreduce:
                     printf("Error semántico: la variable '%s' ya fue declarada en este bloque.\n", (yyvsp[-2].nombre));
                 } else {
                     entrada->tipo_base = tipo_actual;
+
+                    if(es_constante_actual == 1){
+                        entrada->es_constante = 1;
+                    }
                     // --- GENERACIÓN DE CÓDIGO PYTHON ---
                     fprintf(yyout_py, "%s = %g\n", (yyvsp[-2].nombre), (yyvsp[0].val_num));
                 }
                 free((yyvsp[-2].nombre));
          }
-#line 1293 "y.tab.c"
+#line 1344 "y.tab.c"
     break;
 
 
-#line 1297 "y.tab.c"
+#line 1348 "y.tab.c"
 
       default: break;
     }
@@ -1486,14 +1537,14 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 123 "parser.y"
+#line 150 "parser.y"
 
 
 /* Inclusión rústica del analizador léxico al final del archivo */
 #include "lex.yy.c"
 
 void yyerror(const char *s) {
-    fprintf(stderr, "Error sintáctico: %s\n", s);
+    fprintf(stderr, "Error sintáctico en la línea %d: %s\n", yylineno, s);
 }
 
 

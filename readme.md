@@ -1,0 +1,1 @@
+lex lexico.l && yacc parser.y && cc y.tab.c -ly -lfl && ./a.out prueba.c prueba.py
