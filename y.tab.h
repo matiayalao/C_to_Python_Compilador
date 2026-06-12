@@ -63,8 +63,12 @@ extern int yydebug;
     CHAR = 264,                    /* CHAR  */
     CONST = 265,                   /* CONST  */
     DOUBLE = 266,                  /* DOUBLE  */
-    NUMERO = 267,                  /* NUMERO  */
-    ID = 268                       /* ID  */
+    FOR = 267,                     /* FOR  */
+    MAYOR_IGUAL = 268,             /* MAYOR_IGUAL  */
+    IGUAL_IGUAL = 269,             /* IGUAL_IGUAL  */
+    MENOR_IGUAL = 270,             /* MENOR_IGUAL  */
+    ID = 271,                      /* ID  */
+    NUMERO = 272                   /* NUMERO  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -82,19 +86,23 @@ extern int yydebug;
 #define CHAR 264
 #define CONST 265
 #define DOUBLE 266
-#define NUMERO 267
-#define ID 268
+#define FOR 267
+#define MAYOR_IGUAL 268
+#define IGUAL_IGUAL 269
+#define MENOR_IGUAL 270
+#define ID 271
+#define NUMERO 272
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 20 "parser.y"
+#line 33 "parser.y"
 
-    char *nombre;     /* Para transportar el nombre de los identificadores */
-    double val_num;   /* Por si usás números más adelante */
+    char *nombre;     
+    double val_num;   
 
-#line 98 "y.tab.h"
+#line 106 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

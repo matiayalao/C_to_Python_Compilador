@@ -8,6 +8,7 @@
 #define T_FLOAT  4
 #define T_DOUBLE 5
 
+int contador_entornos = 0;
 // 1. Definimos cómo es una "fila" de nuestra planilla (el struct)
 struct entrada_tabla {
     char *nombre;        // Nombre de la variable (ej: "mi_puntero")
@@ -17,6 +18,7 @@ struct entrada_tabla {
     int es_unsigned;     // 0 = signed (por defecto), 1 = unsigned
     int es_long;         // 0 = normal, 1 = long, 2 = long long
     int es_short;
+    int id_entorno_declarado;
     
 };
 
@@ -25,7 +27,8 @@ struct Entorno {
     int cantidad_simbolos;                // Cuántos usó ESTE bloque
     int capacidad_tabla;                  // Capacidad de ESTE bloque
     
-    struct Entorno *padre;                // ¡La clave! Puntero al entorno de afuera
+    struct Entorno *padre; // ¡La clave! Puntero al entorno de afuera
+    int id_entorno;               
 };
 struct Entorno *entorno_actual = NULL;
 
