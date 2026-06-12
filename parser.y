@@ -27,7 +27,8 @@ para que tenga compartimentos de distintos tipos de datos.*/
 }
 
 /* DECLARAMOS LOS TOKENS Y LE ASIGNAMOS EL TIPO DE LA UNION A ID */
-%token IF ELSE WHILE RETURN INT FLOAT CHAR CONST DOUBLE
+%token IF ELSE WHILE RETURN INT FLOAT CHAR CONST DOUBLE FOR 
+%token MAYOR_IGUAL IGUAL_IGUAL MENOR_IGUAL
 %token <nombre> ID
 %token <val_num> NUMERO 
 
@@ -61,12 +62,14 @@ instrucciones : instrucciones instruccion
 /* AQUÍ ESTÁ EL SECRETO: Una instrucción puede ser una declaración O un bloque nuevo */
 instruccion : declaracion 
            | bloque
+           | loop
            ;
 
 declaracion : prefijo_declaracion lista_ids ';' { es_constante_actual = 0; }
             | CONST lista_ids ';' {
                 printf("[Error de Sintaxis] Línea %d: Definiste una constante pero omitiste el tipo de dato (ej: const int ...).\n", yylineno);
             }
+            | 
             ;
 
 prefijo_declaracion : tipo             { es_constante_actual = 0; }
@@ -146,6 +149,106 @@ lista_ids : ID {
                 free($3);
          }
          ;
+
+loop : FOR'('declaracion condicion_loop';' loop_consecuencia')' '{' instruccion '}'
+     | WHILE '('
+
+condicion_loop : ID '=' NUMERO {
+                struct entrada_tabla *entrada = buscar_variable($1);
+                 if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $1);
+                }
+            }
+               | NUMERO '=' ID {
+                struct entrada_tabla *entrada = buscar_variable($3);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $3);
+                }
+            }
+               | NUMERO '>' ID {
+                struct entrada_tabla *entrada = buscar_variable($3);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $3);
+                }
+            }
+               | ID '>' NUMERO {
+                struct entrada_tabla *entrada = buscar_variable($1);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $1);
+                }
+            }
+               | ID '<' NUMERO {
+                struct entrada_tabla *entrada = buscar_variable($1);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $1);
+                }
+            }
+               | NUMERO '<' ID {
+                struct entrada_tabla *entrada = buscar_variable($3);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $3);
+                }
+            }
+               | ID MAYOR_IGUAL NUMERO {
+                struct entrada_tabla *entrada = buscar_variable($1);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $1);
+                }
+            }
+               | NUMERO MENOR_IGUAL ID { // NUMERO '<=' ID
+                struct entrada_tabla *entrada = buscar_variable($3);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $3);
+                }
+            }
+               | ID MENOR_IGUAL NUMERO {
+                struct entrada_tabla *entrada = buscar_variable($1);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $1);
+                }
+            }
+               | NUMERO MAYOR_IGUAL ID {
+                struct entrada_tabla *entrada = buscar_variable($3);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $3);
+                }
+            }
+               | ID IGUAL_IGUAL NUMERO {
+                struct entrada_tabla *entrada = buscar_variable($1);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $1);
+                }
+            }
+               | NUMERO IGUAL_IGUAL ID {
+                struct entrada_tabla *entrada = buscar_variable($3);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $3);
+                }
+            }
+            ;
+
+loop_consecuencia: ID {
+                    struct entrada_tabla *entrada = buscar_variable($1);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $1);
+                }
+            }
+                | ID'+''+' {
+                    struct entrada_tabla *entrada = buscar_variable($1);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $1);
+                }
+                }
+                |  '-''-'ID {
+                        struct entrada_tabla *entrada = buscar_variable($3);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $3);
+                }
+                }
+                |
+                ;
+
+
 
 %%
 

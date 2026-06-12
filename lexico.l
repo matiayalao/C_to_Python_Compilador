@@ -2,12 +2,14 @@
 #include <string.h>
 %}
 
+%option yylineno
 delim   [ \t\n]
 ws      {delim}+
 letra   [A-Za-z_]
 digito  [0-9]
 id      {letra}({letra}|{digito})*
 numero  {digito}+(\.{digito}+)?
+
 
 %%
 {ws}        { /* Ignorar espacios en blanco */ }
@@ -16,6 +18,7 @@ numero  {digito}+(\.{digito}+)?
 "else"      { return(ELSE); }
 "while"     { return(WHILE); }
 "return"    { return(RETURN); }
+"for"       { return(FOR); }
 
 "int"       { return(INT); }
 "float"     { return(FLOAT); }
@@ -29,8 +32,17 @@ numero  {digito}+(\.{digito}+)?
 "}"         { return('}'); }
 "*"         { return('*'); }
 "="         { return('='); }
+"=="        { return(IGUAL_IGUAL); }                                 
+"<="        { return(MENOR_IGUAL); }                                 
+">="        { return(MAYOR_IGUAL); }                                 
 ";"         { return(';'); }
 ","         { return(','); }
+"+"         { return('+'); }                                  
+"-"         { return('-'); }                                  
+"<"         { return('<'); }                                  
+">"         { return('>'); }
+"("         { return('('); }
+")"         { return(')'); }
 
 .           { printf("Error léxico: caracter inválido %s\n", yytext); }
 %%
