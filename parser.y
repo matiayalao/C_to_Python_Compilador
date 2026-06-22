@@ -44,7 +44,7 @@ para que tenga compartimentos de distintos tipos de datos.*/
 
 %left '+' '-'
 %left '*' '/'
-%type <nombre> expresion_loop 
+%type <nombre> expresion 
 
 %%
 
@@ -76,16 +76,23 @@ instrucciones : instrucciones instruccion
 
 /* AQUÍ ESTÁ EL SECRETO: Una instrucción puede ser una declaración O un bloque nuevo */
 instruccion : declaracion 
+           | asignacion
            | bloque
            | loop
            ;
 
-declaracion : prefijo_declaracion lista_ids ';' { es_constante_actual = 0; }
-            | CONST lista_ids ';' {
+declaracion : prefijo_declaracion declarar_lista_ids ';' { es_constante_actual = 0; }
+            | CONST declarar_lista_ids ';' {
                 printf("[Error de Sintaxis] Línea %d: Definiste una constante pero omitiste el tipo de dato (ej: const int ...).\n", yylineno);
             }
-            | 
+            | ';'
             ;
+
+for_init : declaracion
+         | asignacion
+         ;
+
+asignacion : lista_asignaciones ';' ;
 
 prefijo_declaracion : tipo             { es_constante_actual = 0; }
                     | CONST tipo       { es_constante_actual = 1; } /* ¡Se activa ANTES de lista_ids! */
@@ -97,7 +104,7 @@ tipo : INT    { tipo_actual = T_INT; }
     | DOUBLE { tipo_actual = T_DOUBLE; }
     ;
 
-lista_ids : ID {
+declarar_lista_ids : ID {
                 struct entrada_tabla *entrada = declarar_variable($1);
                 if (entrada == NULL){
                     printf("Error semántico: la variable '%s' ya fue declarada.\n", $1);
@@ -113,7 +120,7 @@ lista_ids : ID {
                 }
                 free($1);
          }
-         | lista_ids ',' ID {
+         | declarar_lista_ids ',' ID {
                 struct entrada_tabla *entrada = declarar_variable($3);
                 if (entrada == NULL){
                     printf("Error semántico: la variable '%s' ya fue declarada.\n", $3);
@@ -129,7 +136,7 @@ lista_ids : ID {
                 }
                 free($3);
          }
-         | ID '=' expresion_loop {
+         | ID '=' expresion {
                 struct entrada_tabla *entrada = declarar_variable($1);
                 if (entrada == NULL){
                     printf("Error semántico: la variable '%s' ya fue declarada.\n", $1);
@@ -146,7 +153,7 @@ lista_ids : ID {
                 }
                 free($1);
          }
-         | lista_ids ',' ID '=' expresion_loop {
+         | declarar_lista_ids ',' ID '=' expresion {
                 struct entrada_tabla *entrada = declarar_variable($3);
                 if (entrada == NULL){
                     printf("Error semántico: la variable '%s' ya fue declarada.\n", $3);
@@ -165,6 +172,29 @@ lista_ids : ID {
          }
          ;
 
+lista_asignaciones : ID '=' expresion {
+                        struct entrada_tabla *entrada = buscar_variable($1);
+                        if (entrada == NULL){
+                            printf("Error semántico: la variable '%s' no existe.\n", $1);
+                        } else {
+                            imprimir_indentacion();
+                            fprintf(yyout_py, "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, $3);
+                        }
+                        free($1); free($3);
+                   }
+                   | lista_asignaciones ',' ID '=' expresion {
+                        struct entrada_tabla *entrada = buscar_variable($3);
+                        if (entrada == NULL){
+                            printf("Error semántico: la variable '%s' no existe.\n", $3);
+                        } else {
+                            imprimir_indentacion();
+                            fprintf(yyout_py, "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, $5);
+                        }
+                        free($3); free($5);
+                   }
+                   | ID { free($1); }
+                   | lista_asignaciones ',' ID { free($3); }
+                   ;
 
 loop : FOR {
             struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
@@ -172,10 +202,7 @@ loop : FOR {
             nuevo->padre = entorno_actual; 
             nuevo->id_entorno = contador_entornos++;
             entorno_actual = nuevo;   
-}'('declaracion condicion_loop';' loop_consecuencia')' '{' {
-            nivel_indentacion++; 
-    }
-    instrucciones '}' {
+}'('for_init condicion_loop';' loop_consecuencia')' '{' instrucciones '}'{
             if ($7 && strlen($7) > 0) {
                 imprimir_indentacion();
                 fprintf(yyout_py, "%s", $7);
@@ -189,7 +216,7 @@ loop : FOR {
             entorno_actual = entorno_actual->padre;
             free(viejo);
     }
-    | WHILE '(' expresion_loop ')''{' {
+    | WHILE '(' expresion ')''{' {
         /* Acción intermedia: Abrimos entorno y loop */
         imprimir_indentacion();
         fprintf(yyout_py, "while %s:\n", $3);
@@ -201,43 +228,43 @@ loop : FOR {
     ;
      
 
-condicion_loop : expresion_loop '=' expresion_loop {
+condicion_loop : expresion '=' expresion {
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s = %s:\n", $1, $3);
                     nivel_indentacion++;
                     free($1); free($3);
             }
-               | expresion_loop '>' expresion_loop {
+               | expresion '>' expresion {
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s > %s:\n", $1, $3);
                     nivel_indentacion++;
                     free($1); free($3);
             }
-               | expresion_loop '<' expresion_loop {
+               | expresion '<' expresion {
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s < %s:\n", $1, $3);
                     nivel_indentacion++;
                     free($1); free($3);
             }
-               | expresion_loop MAYOR_IGUAL expresion_loop {
+               | expresion MAYOR_IGUAL expresion {
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s >= %s:\n", $1, $3);
                     nivel_indentacion++;
                     free($1); free($3);
             }
-               | expresion_loop MENOR_IGUAL expresion_loop { // NUMERO '<=' ID
+               | expresion MENOR_IGUAL expresion { // NUMERO '<=' ID
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s <= %s:\n", $1, $3);
                     nivel_indentacion++;
                     free($1); free($3);
             }
-               | expresion_loop IGUAL_IGUAL expresion_loop {
+               | expresion IGUAL_IGUAL expresion {
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s == %s:\n", $1, $3);
                     nivel_indentacion++;
                     free($1); free($3);
             }
-            | expresion_loop {
+            | expresion {
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s:\n", $1);
                     nivel_indentacion++;
@@ -276,10 +303,21 @@ loop_consecuencia: ID {
                     $$ = strdup(buf);
                 }
                 }
-                
+                | ID '=' expresion {
+                    struct entrada_tabla *entrada = buscar_variable($1);
+                    if (entrada == NULL){
+                        printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $1);
+                        $$ = strdup("");
+                    } else {
+                        char buf[512];
+                        snprintf(buf, sizeof(buf), "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, $3);
+                        $$ = strdup(buf);
+                    }
+                    free($1); free($3);
+                }
                 ;
 
-expresion_loop : ID {
+expresion : ID {
                 struct entrada_tabla *entrada = buscar_variable($1);
                 if (entrada == NULL) {
                     printf("Error semántico: '%s' no declarada.\n", $1);
@@ -297,25 +335,25 @@ expresion_loop : ID {
                 sprintf(buf, "%g", $1);
                 $$ = strdup(buf);
           }
-          | expresion_loop '+' expresion_loop {
+          | expresion '+' expresion {
                 char buf[256];
                 sprintf(buf, "%s + %s", $1, $3);
                 $$ = strdup(buf);
                 free($1); free($3); // Limpiamos memoria de los hijos
           }
-          | expresion_loop '-' expresion_loop {
+          | expresion '-' expresion {
                 char buf[256];
                 sprintf(buf, "%s - %s", $1, $3);
                 $$ = strdup(buf);
                 free($1); free($3);
           }
-          | expresion_loop '*' expresion_loop {
+          | expresion '*' expresion {
                 char buf[256];
                 sprintf(buf, "%s * %s", $1, $3);
                 $$ = strdup(buf);
                 free($1); free($3);
           }
-          | '(' expresion_loop ')' {
+          | '(' expresion ')' {
                 char buf[256];
                 sprintf(buf, "(%s)", $2);
                 $$ = strdup(buf);

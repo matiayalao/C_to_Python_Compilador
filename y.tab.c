@@ -244,16 +244,18 @@ enum yysymbol_kind_t
   YYSYMBOL_instrucciones = 35,             /* instrucciones  */
   YYSYMBOL_instruccion = 36,               /* instruccion  */
   YYSYMBOL_declaracion = 37,               /* declaracion  */
-  YYSYMBOL_prefijo_declaracion = 38,       /* prefijo_declaracion  */
-  YYSYMBOL_tipo = 39,                      /* tipo  */
-  YYSYMBOL_lista_ids = 40,                 /* lista_ids  */
-  YYSYMBOL_loop = 41,                      /* loop  */
-  YYSYMBOL_42_2 = 42,                      /* $@2  */
-  YYSYMBOL_43_3 = 43,                      /* $@3  */
-  YYSYMBOL_44_4 = 44,                      /* $@4  */
-  YYSYMBOL_condicion_loop = 45,            /* condicion_loop  */
-  YYSYMBOL_loop_consecuencia = 46,         /* loop_consecuencia  */
-  YYSYMBOL_expresion_loop = 47             /* expresion_loop  */
+  YYSYMBOL_for_init = 38,                  /* for_init  */
+  YYSYMBOL_asignacion = 39,                /* asignacion  */
+  YYSYMBOL_prefijo_declaracion = 40,       /* prefijo_declaracion  */
+  YYSYMBOL_tipo = 41,                      /* tipo  */
+  YYSYMBOL_declarar_lista_ids = 42,        /* declarar_lista_ids  */
+  YYSYMBOL_lista_asignaciones = 43,        /* lista_asignaciones  */
+  YYSYMBOL_loop = 44,                      /* loop  */
+  YYSYMBOL_45_2 = 45,                      /* $@2  */
+  YYSYMBOL_46_3 = 46,                      /* $@3  */
+  YYSYMBOL_condicion_loop = 47,            /* condicion_loop  */
+  YYSYMBOL_loop_consecuencia = 48,         /* loop_consecuencia  */
+  YYSYMBOL_expresion = 49                  /* expresion  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -581,16 +583,16 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  3
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   108
+#define YYLAST   129
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  31
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  17
+#define YYNNTS  19
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  43
+#define YYNRULES  51
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  81
+#define YYNSTATES  95
 
 /* YYMAXUTOK -- Last valid token kind.  */
 #define YYMAXUTOK   272
@@ -642,10 +644,11 @@ static const yytype_int8 yytranslate[] =
 static const yytype_int16 yyrline[] =
 {
        0,    51,    51,    54,    54,    73,    74,    78,    79,    80,
-      83,    84,    87,    90,    91,    94,    95,    96,    97,   100,
-     116,   132,   149,   169,   175,   169,   192,   192,   204,   210,
-     216,   222,   228,   234,   240,   248,   257,   268,   282,   295,
-     300,   306,   312,   318
+      81,    84,    85,    88,    91,    92,    95,    97,    98,   101,
+     102,   103,   104,   107,   123,   139,   156,   175,   185,   195,
+     196,   199,   199,   219,   219,   231,   237,   243,   249,   255,
+     261,   267,   275,   284,   295,   306,   320,   333,   338,   344,
+     350,   356
 };
 #endif
 
@@ -666,9 +669,10 @@ static const char *const yytname[] =
   "MAYOR_IGUAL", "IGUAL_IGUAL", "MENOR_IGUAL", "ID", "NUMERO", "'+'",
   "'-'", "'*'", "'/'", "'{'", "'}'", "';'", "','", "'='", "'('", "')'",
   "'>'", "'<'", "$accept", "programa", "bloque", "$@1", "instrucciones",
-  "instruccion", "declaracion", "prefijo_declaracion", "tipo", "lista_ids",
-  "loop", "$@2", "$@3", "$@4", "condicion_loop", "loop_consecuencia",
-  "expresion_loop", YY_NULLPTR
+  "instruccion", "declaracion", "for_init", "asignacion",
+  "prefijo_declaracion", "tipo", "declarar_lista_ids",
+  "lista_asignaciones", "loop", "$@2", "$@3", "condicion_loop",
+  "loop_consecuencia", "expresion", YY_NULLPTR
 };
 
 static const char *
@@ -678,7 +682,7 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-26)
+#define YYPACT_NINF (-29)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -692,15 +696,16 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-     -26,     1,    71,   -26,   -13,   -26,   -26,   -26,    80,   -26,
-     -26,   -26,   -26,   -26,   -26,     2,   -26,   -26,    -1,    -3,
-     -26,    32,     0,   -26,    48,   -26,   -26,    -1,    49,    -1,
-     -26,     9,    90,    -2,   -26,    66,    -1,    -1,    -1,     6,
-      84,    11,    -1,   -26,   -26,    25,    25,   -26,   -26,    -1,
-      28,    45,   -26,    84,     3,    -1,    -1,    -1,    -1,    -1,
-      -1,    31,    52,    47,    62,    84,    84,    84,    84,    84,
-      84,   -26,    74,    79,    83,   -26,   -26,   -26,   -26,    39,
-     -26
+     -29,     5,     6,   -29,   -20,   -29,   -29,   -29,   111,   -29,
+     -29,    -1,   -29,   -29,   -29,   -29,   -29,   -29,    11,   -29,
+      37,   -29,     7,    10,   -29,    52,    29,     7,   -29,    76,
+     -29,    42,   -29,   -29,     7,   -16,     7,   -29,    47,    73,
+      20,    43,   -29,    70,    13,     7,     7,     7,    56,    20,
+      72,   -29,     7,   -29,   -29,     7,   -29,    49,    49,   -29,
+     -29,     7,    78,    95,    20,   -29,    20,   -10,     7,     7,
+       7,     7,     7,     7,    63,    31,    84,    88,    20,    20,
+      20,    20,    20,    20,   -29,    86,     7,    96,    89,   -29,
+      20,   -29,   -29,    83,   -29
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -708,29 +713,30 @@ static const yytype_int8 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       6,     0,     2,     1,     0,    15,    16,    17,     0,    18,
-      23,     3,     8,     5,     7,     0,    13,     9,     0,    19,
-      14,     0,     0,     6,     0,    38,    39,     0,     0,     0,
-      11,     0,    12,     0,    10,     0,     0,     0,     0,     0,
-      21,    20,     0,     4,    43,    40,    41,    42,    26,     0,
-       0,    34,     6,    22,     0,     0,     0,     0,     0,     0,
-       0,     0,    35,     0,     0,    31,    33,    32,    28,    29,
-      30,    27,     0,     0,     0,    36,    37,    24,     6,     0,
-      25
+       6,     0,     2,     1,     0,    19,    20,    21,     0,    22,
+      31,    29,     3,    13,     9,     5,     7,     8,     0,    17,
+       0,    10,     0,    23,    18,     0,     0,     0,     6,     0,
+      16,     0,    46,    47,     0,     0,     0,    12,     0,     0,
+      27,     0,    11,    30,     0,     0,     0,     0,     0,    25,
+      24,    14,     0,    15,     4,     0,    51,    48,    49,    50,
+      33,     0,     0,    41,    28,     6,    26,     0,     0,     0,
+       0,     0,     0,     0,     0,    42,     0,     0,    38,    40,
+      39,    35,    36,    37,    34,     0,     0,     0,     0,    43,
+      45,    44,     6,     0,    32
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -26,   -26,   -26,   -26,   -23,   -26,    75,   -26,    98,    93,
-     -26,   -26,   -26,   -26,   -26,   -26,   -25
+     -29,   -29,   -29,   -29,   -28,   -29,    87,   -29,    90,   -29,
+     109,   105,   -29,   -29,   -29,   -29,   -29,   -29,   -26
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     1,    12,    23,     2,    13,    14,    15,    16,    21,
-      17,    22,    78,    52,    50,    64,    28
+       0,     1,    14,    28,     2,    15,    16,    52,    17,    18,
+      19,    25,    20,    21,    26,    65,    62,    77,    35
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -738,32 +744,36 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-      33,     3,    35,     4,    40,     5,     6,     7,     8,     9,
-      10,    45,    46,    47,    18,    25,    26,    51,    19,    62,
-      11,    43,    63,    29,    53,    41,    27,    32,    48,    61,
-      65,    66,    67,    68,    69,    70,     4,    49,     5,     6,
-       7,     8,     9,    10,     4,    38,     5,     6,     7,     8,
-       9,    10,    54,    11,    71,    79,    30,    31,    55,    56,
-      57,    11,    80,    36,    37,    38,    73,    36,    37,    38,
-      72,    58,    34,    31,    59,    60,     4,    39,     5,     6,
-       7,     8,     9,    10,    36,    37,    38,     5,     6,     7,
-      74,     9,    75,    11,    44,    76,    19,     5,     6,     7,
-       8,     9,    36,    37,    38,    77,    20,    42,    24
+      41,    40,    45,    46,    47,     3,    75,    22,    44,    76,
+      49,     4,    48,     5,     6,     7,     8,     9,    10,    57,
+      58,    59,    11,    32,    33,    27,    63,    23,    12,    64,
+      13,    45,    46,    47,    34,    66,    36,    74,    45,    46,
+      47,    56,    78,    79,    80,    81,    82,    83,     4,    85,
+       5,     6,     7,     8,     9,    10,    39,    86,    43,    11,
+      90,    30,    31,    50,    93,    12,    54,    13,     4,    47,
+       5,     6,     7,     8,     9,    10,    37,    38,    60,    11,
+       5,     6,     7,     8,     9,    12,    84,    13,     4,    11,
+       5,     6,     7,     8,     9,    10,    55,    13,    61,    11,
+      42,    38,    67,    87,    89,    12,    94,    13,    68,    69,
+      70,    92,    91,    45,    46,    47,    88,    24,     5,     6,
+       7,    71,     9,    29,    72,    73,    51,    23,     0,    53
 };
 
 static const yytype_int8 yycheck[] =
 {
-      23,     0,    27,     5,    29,     7,     8,     9,    10,    11,
-      12,    36,    37,    38,    27,    16,    17,    42,    16,    16,
-      22,    23,    19,    26,    49,    16,    27,    27,    22,    52,
-      55,    56,    57,    58,    59,    60,     5,    26,     7,     8,
-       9,    10,    11,    12,     5,    20,     7,     8,     9,    10,
-      11,    12,    24,    22,    23,    78,    24,    25,    13,    14,
-      15,    22,    23,    18,    19,    20,    19,    18,    19,    20,
-      18,    26,    24,    25,    29,    30,     5,    28,     7,     8,
-       9,    10,    11,    12,    18,    19,    20,     7,     8,     9,
-      28,    11,    18,    22,    28,    16,    16,     7,     8,     9,
-      10,    11,    18,    19,    20,    22,     8,    32,    15
+      28,    27,    18,    19,    20,     0,    16,    27,    34,    19,
+      36,     5,    28,     7,     8,     9,    10,    11,    12,    45,
+      46,    47,    16,    16,    17,    26,    52,    16,    22,    55,
+      24,    18,    19,    20,    27,    61,    26,    65,    18,    19,
+      20,    28,    68,    69,    70,    71,    72,    73,     5,    18,
+       7,     8,     9,    10,    11,    12,    27,    26,    16,    16,
+      86,    24,    25,    16,    92,    22,    23,    24,     5,    20,
+       7,     8,     9,    10,    11,    12,    24,    25,    22,    16,
+       7,     8,     9,    10,    11,    22,    23,    24,     5,    16,
+       7,     8,     9,    10,    11,    12,    26,    24,    26,    16,
+      24,    25,    24,    19,    18,    22,    23,    24,    13,    14,
+      15,    22,    16,    18,    19,    20,    28,     8,     7,     8,
+       9,    26,    11,    18,    29,    30,    39,    16,    -1,    39
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
@@ -771,34 +781,37 @@ static const yytype_int8 yycheck[] =
 static const yytype_int8 yystos[] =
 {
        0,    32,    35,     0,     5,     7,     8,     9,    10,    11,
-      12,    22,    33,    36,    37,    38,    39,    41,    27,    16,
-      39,    40,    42,    34,    40,    16,    17,    27,    47,    26,
-      24,    25,    27,    35,    24,    47,    18,    19,    20,    28,
-      47,    16,    37,    23,    28,    47,    47,    47,    22,    26,
-      45,    47,    44,    47,    24,    13,    14,    15,    26,    29,
-      30,    35,    16,    19,    46,    47,    47,    47,    47,    47,
-      47,    23,    18,    19,    28,    18,    16,    22,    43,    35,
-      23
+      12,    16,    22,    24,    33,    36,    37,    39,    40,    41,
+      43,    44,    27,    16,    41,    42,    45,    26,    34,    42,
+      24,    25,    16,    17,    27,    49,    26,    24,    25,    27,
+      49,    35,    24,    16,    49,    18,    19,    20,    28,    49,
+      16,    37,    38,    39,    23,    26,    28,    49,    49,    49,
+      22,    26,    47,    49,    49,    46,    49,    24,    13,    14,
+      15,    26,    29,    30,    35,    16,    19,    48,    49,    49,
+      49,    49,    49,    49,    23,    18,    26,    19,    28,    18,
+      49,    16,    22,    35,    23
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
        0,    31,    32,    34,    33,    35,    35,    36,    36,    36,
-      37,    37,    37,    38,    38,    39,    39,    39,    39,    40,
-      40,    40,    40,    42,    43,    41,    44,    41,    45,    45,
-      45,    45,    45,    45,    45,    46,    46,    46,    47,    47,
-      47,    47,    47,    47
+      36,    37,    37,    37,    38,    38,    39,    40,    40,    41,
+      41,    41,    41,    42,    42,    42,    42,    43,    43,    43,
+      43,    45,    44,    46,    44,    47,    47,    47,    47,    47,
+      47,    47,    48,    48,    48,    48,    49,    49,    49,    49,
+      49,    49
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
        0,     2,     1,     0,     4,     2,     0,     1,     1,     1,
-       3,     3,     0,     1,     2,     1,     1,     1,     1,     1,
-       3,     3,     5,     0,     0,    12,     0,     8,     3,     3,
-       3,     3,     3,     3,     1,     1,     3,     3,     1,     1,
-       3,     3,     3,     3
+       1,     3,     3,     1,     1,     1,     2,     1,     2,     1,
+       1,     1,     1,     1,     3,     3,     5,     3,     5,     1,
+       3,     0,    11,     0,     8,     3,     3,     3,     3,     3,
+       3,     1,     1,     3,     3,     3,     1,     1,     3,     3,
+       3,     3
 };
 
 
@@ -1273,7 +1286,7 @@ yyreduce:
                 nuevo->id_entorno = contador_entornos++; 
                 entorno_actual = nuevo; 
             }
-#line 1277 "y.tab.c"
+#line 1290 "y.tab.c"
     break;
 
   case 4: /* bloque: '{' $@1 instrucciones '}'  */
@@ -1285,62 +1298,62 @@ yyreduce:
                 
                 /* Opcional: Podés liberar la memoria de 'viejo' aquí si querés */
             }
-#line 1289 "y.tab.c"
+#line 1302 "y.tab.c"
     break;
 
-  case 10: /* declaracion: prefijo_declaracion lista_ids ';'  */
-#line 83 "parser.y"
-                                                { es_constante_actual = 0; }
-#line 1295 "y.tab.c"
-    break;
-
-  case 11: /* declaracion: CONST lista_ids ';'  */
+  case 11: /* declaracion: prefijo_declaracion declarar_lista_ids ';'  */
 #line 84 "parser.y"
-                                  {
+                                                         { es_constante_actual = 0; }
+#line 1308 "y.tab.c"
+    break;
+
+  case 12: /* declaracion: CONST declarar_lista_ids ';'  */
+#line 85 "parser.y"
+                                           {
                 printf("[Error de Sintaxis] Línea %d: Definiste una constante pero omitiste el tipo de dato (ej: const int ...).\n", yylineno);
             }
-#line 1303 "y.tab.c"
+#line 1316 "y.tab.c"
     break;
 
-  case 13: /* prefijo_declaracion: tipo  */
-#line 90 "parser.y"
-                                       { es_constante_actual = 0; }
-#line 1309 "y.tab.c"
-    break;
-
-  case 14: /* prefijo_declaracion: CONST tipo  */
-#line 91 "parser.y"
-                                       { es_constante_actual = 1; }
-#line 1315 "y.tab.c"
-    break;
-
-  case 15: /* tipo: INT  */
-#line 94 "parser.y"
-              { tipo_actual = T_INT; }
-#line 1321 "y.tab.c"
-    break;
-
-  case 16: /* tipo: FLOAT  */
-#line 95 "parser.y"
-             { tipo_actual = T_FLOAT; }
-#line 1327 "y.tab.c"
-    break;
-
-  case 17: /* tipo: CHAR  */
-#line 96 "parser.y"
-             { tipo_actual = T_CHAR; }
-#line 1333 "y.tab.c"
-    break;
-
-  case 18: /* tipo: DOUBLE  */
+  case 17: /* prefijo_declaracion: tipo  */
 #line 97 "parser.y"
-             { tipo_actual = T_DOUBLE; }
-#line 1339 "y.tab.c"
+                                       { es_constante_actual = 0; }
+#line 1322 "y.tab.c"
     break;
 
-  case 19: /* lista_ids: ID  */
-#line 100 "parser.y"
-               {
+  case 18: /* prefijo_declaracion: CONST tipo  */
+#line 98 "parser.y"
+                                       { es_constante_actual = 1; }
+#line 1328 "y.tab.c"
+    break;
+
+  case 19: /* tipo: INT  */
+#line 101 "parser.y"
+              { tipo_actual = T_INT; }
+#line 1334 "y.tab.c"
+    break;
+
+  case 20: /* tipo: FLOAT  */
+#line 102 "parser.y"
+             { tipo_actual = T_FLOAT; }
+#line 1340 "y.tab.c"
+    break;
+
+  case 21: /* tipo: CHAR  */
+#line 103 "parser.y"
+             { tipo_actual = T_CHAR; }
+#line 1346 "y.tab.c"
+    break;
+
+  case 22: /* tipo: DOUBLE  */
+#line 104 "parser.y"
+             { tipo_actual = T_DOUBLE; }
+#line 1352 "y.tab.c"
+    break;
+
+  case 23: /* declarar_lista_ids: ID  */
+#line 107 "parser.y"
+                        {
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[0].nombre));
                 if (entrada == NULL){
                     printf("Error semántico: la variable '%s' ya fue declarada.\n", (yyvsp[0].nombre));
@@ -1356,12 +1369,12 @@ yyreduce:
                 }
                 free((yyvsp[0].nombre));
          }
-#line 1360 "y.tab.c"
+#line 1373 "y.tab.c"
     break;
 
-  case 20: /* lista_ids: lista_ids ',' ID  */
-#line 116 "parser.y"
-                            {
+  case 24: /* declarar_lista_ids: declarar_lista_ids ',' ID  */
+#line 123 "parser.y"
+                                     {
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[0].nombre));
                 if (entrada == NULL){
                     printf("Error semántico: la variable '%s' ya fue declarada.\n", (yyvsp[0].nombre));
@@ -1377,12 +1390,12 @@ yyreduce:
                 }
                 free((yyvsp[0].nombre));
          }
-#line 1381 "y.tab.c"
+#line 1394 "y.tab.c"
     break;
 
-  case 21: /* lista_ids: ID '=' expresion_loop  */
-#line 132 "parser.y"
-                                 {
+  case 25: /* declarar_lista_ids: ID '=' expresion  */
+#line 139 "parser.y"
+                            {
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[-2].nombre));
                 if (entrada == NULL){
                     printf("Error semántico: la variable '%s' ya fue declarada.\n", (yyvsp[-2].nombre));
@@ -1399,12 +1412,12 @@ yyreduce:
                 }
                 free((yyvsp[-2].nombre));
          }
-#line 1403 "y.tab.c"
+#line 1416 "y.tab.c"
     break;
 
-  case 22: /* lista_ids: lista_ids ',' ID '=' expresion_loop  */
-#line 149 "parser.y"
-                                               {
+  case 26: /* declarar_lista_ids: declarar_lista_ids ',' ID '=' expresion  */
+#line 156 "parser.y"
+                                                   {
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[-2].nombre));
                 if (entrada == NULL){
                     printf("Error semántico: la variable '%s' ya fue declarada.\n", (yyvsp[-2].nombre));
@@ -1421,11 +1434,53 @@ yyreduce:
                 }
                 free((yyvsp[-2].nombre));
          }
-#line 1425 "y.tab.c"
+#line 1438 "y.tab.c"
     break;
 
-  case 23: /* $@2: %empty  */
-#line 169 "parser.y"
+  case 27: /* lista_asignaciones: ID '=' expresion  */
+#line 175 "parser.y"
+                                      {
+                        struct entrada_tabla *entrada = buscar_variable((yyvsp[-2].nombre));
+                        if (entrada == NULL){
+                            printf("Error semántico: la variable '%s' no existe.\n", (yyvsp[-2].nombre));
+                        } else {
+                            imprimir_indentacion();
+                            fprintf(yyout_py, "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, (yyvsp[0].nombre));
+                        }
+                        free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                   }
+#line 1453 "y.tab.c"
+    break;
+
+  case 28: /* lista_asignaciones: lista_asignaciones ',' ID '=' expresion  */
+#line 185 "parser.y"
+                                                             {
+                        struct entrada_tabla *entrada = buscar_variable((yyvsp[-2].nombre));
+                        if (entrada == NULL){
+                            printf("Error semántico: la variable '%s' no existe.\n", (yyvsp[-2].nombre));
+                        } else {
+                            imprimir_indentacion();
+                            fprintf(yyout_py, "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, (yyvsp[0].nombre));
+                        }
+                        free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                   }
+#line 1468 "y.tab.c"
+    break;
+
+  case 29: /* lista_asignaciones: ID  */
+#line 195 "parser.y"
+                        { free((yyvsp[0].nombre)); }
+#line 1474 "y.tab.c"
+    break;
+
+  case 30: /* lista_asignaciones: lista_asignaciones ',' ID  */
+#line 196 "parser.y"
+                                               { free((yyvsp[0].nombre)); }
+#line 1480 "y.tab.c"
+    break;
+
+  case 31: /* $@2: %empty  */
+#line 199 "parser.y"
            {
             struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
             nuevo->tabla_simbolos = NULL; nuevo->cantidad_simbolos = 0; nuevo->capacidad_tabla = 0;
@@ -1433,24 +1488,16 @@ yyreduce:
             nuevo->id_entorno = contador_entornos++;
             entorno_actual = nuevo;   
 }
-#line 1437 "y.tab.c"
+#line 1492 "y.tab.c"
     break;
 
-  case 24: /* $@3: %empty  */
-#line 175 "parser.y"
-                                                           {
-            nivel_indentacion++; 
-    }
-#line 1445 "y.tab.c"
-    break;
-
-  case 25: /* loop: FOR $@2 '(' declaracion condicion_loop ';' loop_consecuencia ')' '{' $@3 instrucciones '}'  */
-#line 178 "parser.y"
-                      {
-            if ((yyvsp[-5].nombre) && strlen((yyvsp[-5].nombre)) > 0) {
+  case 32: /* loop: FOR $@2 '(' for_init condicion_loop ';' loop_consecuencia ')' '{' instrucciones '}'  */
+#line 205 "parser.y"
+                                                                         {
+            if ((yyvsp[-4].nombre) && strlen((yyvsp[-4].nombre)) > 0) {
                 imprimir_indentacion();
-                fprintf(yyout_py, "%s", (yyvsp[-5].nombre));
-                free((yyvsp[-5].nombre));
+                fprintf(yyout_py, "%s", (yyvsp[-4].nombre));
+                free((yyvsp[-4].nombre));
             }
 
             nivel_indentacion--; // Bajamos la indentación de Python
@@ -1460,108 +1507,108 @@ yyreduce:
             entorno_actual = entorno_actual->padre;
             free(viejo);
     }
-#line 1464 "y.tab.c"
+#line 1511 "y.tab.c"
     break;
 
-  case 26: /* $@4: %empty  */
-#line 192 "parser.y"
-                                      {
+  case 33: /* $@3: %empty  */
+#line 219 "parser.y"
+                                 {
         /* Acción intermedia: Abrimos entorno y loop */
         imprimir_indentacion();
         fprintf(yyout_py, "while %s:\n", (yyvsp[-2].nombre));
         nivel_indentacion++;
         free((yyvsp[-2].nombre)); // Liberamos el string de la expresión
     }
-#line 1476 "y.tab.c"
+#line 1523 "y.tab.c"
     break;
 
-  case 27: /* loop: WHILE '(' expresion_loop ')' '{' $@4 instrucciones '}'  */
-#line 198 "parser.y"
+  case 34: /* loop: WHILE '(' expresion ')' '{' $@3 instrucciones '}'  */
+#line 225 "parser.y"
                         {    
         nivel_indentacion--;
     }
-#line 1484 "y.tab.c"
+#line 1531 "y.tab.c"
     break;
 
-  case 28: /* condicion_loop: expresion_loop '=' expresion_loop  */
-#line 204 "parser.y"
-                                                   {
+  case 35: /* condicion_loop: expresion '=' expresion  */
+#line 231 "parser.y"
+                                         {
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s = %s:\n", (yyvsp[-2].nombre), (yyvsp[0].nombre));
                     nivel_indentacion++;
                     free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
             }
-#line 1495 "y.tab.c"
+#line 1542 "y.tab.c"
     break;
 
-  case 29: /* condicion_loop: expresion_loop '>' expresion_loop  */
-#line 210 "parser.y"
-                                                   {
+  case 36: /* condicion_loop: expresion '>' expresion  */
+#line 237 "parser.y"
+                                         {
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s > %s:\n", (yyvsp[-2].nombre), (yyvsp[0].nombre));
                     nivel_indentacion++;
                     free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
             }
-#line 1506 "y.tab.c"
+#line 1553 "y.tab.c"
     break;
 
-  case 30: /* condicion_loop: expresion_loop '<' expresion_loop  */
-#line 216 "parser.y"
-                                                   {
+  case 37: /* condicion_loop: expresion '<' expresion  */
+#line 243 "parser.y"
+                                         {
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s < %s:\n", (yyvsp[-2].nombre), (yyvsp[0].nombre));
                     nivel_indentacion++;
                     free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
             }
-#line 1517 "y.tab.c"
+#line 1564 "y.tab.c"
     break;
 
-  case 31: /* condicion_loop: expresion_loop MAYOR_IGUAL expresion_loop  */
-#line 222 "parser.y"
-                                                           {
+  case 38: /* condicion_loop: expresion MAYOR_IGUAL expresion  */
+#line 249 "parser.y"
+                                                 {
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s >= %s:\n", (yyvsp[-2].nombre), (yyvsp[0].nombre));
                     nivel_indentacion++;
                     free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
             }
-#line 1528 "y.tab.c"
+#line 1575 "y.tab.c"
     break;
 
-  case 32: /* condicion_loop: expresion_loop MENOR_IGUAL expresion_loop  */
-#line 228 "parser.y"
-                                                           { // NUMERO '<=' ID
+  case 39: /* condicion_loop: expresion MENOR_IGUAL expresion  */
+#line 255 "parser.y"
+                                                 { // NUMERO '<=' ID
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s <= %s:\n", (yyvsp[-2].nombre), (yyvsp[0].nombre));
                     nivel_indentacion++;
                     free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
             }
-#line 1539 "y.tab.c"
+#line 1586 "y.tab.c"
     break;
 
-  case 33: /* condicion_loop: expresion_loop IGUAL_IGUAL expresion_loop  */
-#line 234 "parser.y"
-                                                           {
+  case 40: /* condicion_loop: expresion IGUAL_IGUAL expresion  */
+#line 261 "parser.y"
+                                                 {
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s == %s:\n", (yyvsp[-2].nombre), (yyvsp[0].nombre));
                     nivel_indentacion++;
                     free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
             }
-#line 1550 "y.tab.c"
+#line 1597 "y.tab.c"
     break;
 
-  case 34: /* condicion_loop: expresion_loop  */
-#line 240 "parser.y"
-                             {
+  case 41: /* condicion_loop: expresion  */
+#line 267 "parser.y"
+                        {
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s:\n", (yyvsp[0].nombre));
                     nivel_indentacion++;
                     free((yyvsp[0].nombre));
             }
-#line 1561 "y.tab.c"
+#line 1608 "y.tab.c"
     break;
 
-  case 35: /* loop_consecuencia: ID  */
-#line 248 "parser.y"
+  case 42: /* loop_consecuencia: ID  */
+#line 275 "parser.y"
                       {
                     struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
                 if (entrada == NULL){
@@ -1571,11 +1618,11 @@ yyreduce:
                     (yyval.nombre) = strdup("");
                 }
             }
-#line 1575 "y.tab.c"
+#line 1622 "y.tab.c"
     break;
 
-  case 36: /* loop_consecuencia: ID '+' '+'  */
-#line 257 "parser.y"
+  case 43: /* loop_consecuencia: ID '+' '+'  */
+#line 284 "parser.y"
                            {
                     struct entrada_tabla *entrada = buscar_variable((yyvsp[-2].nombre));
                 if (entrada == NULL){
@@ -1587,11 +1634,11 @@ yyreduce:
                     (yyval.nombre) = strdup(buf);
                 }
                 }
-#line 1591 "y.tab.c"
+#line 1638 "y.tab.c"
     break;
 
-  case 37: /* loop_consecuencia: '-' '-' ID  */
-#line 268 "parser.y"
+  case 44: /* loop_consecuencia: '-' '-' ID  */
+#line 295 "parser.y"
                             {
                         struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
                 if (entrada == NULL){
@@ -1603,12 +1650,29 @@ yyreduce:
                     (yyval.nombre) = strdup(buf);
                 }
                 }
-#line 1607 "y.tab.c"
+#line 1654 "y.tab.c"
     break;
 
-  case 38: /* expresion_loop: ID  */
-#line 282 "parser.y"
-                    {
+  case 45: /* loop_consecuencia: ID '=' expresion  */
+#line 306 "parser.y"
+                                   {
+                    struct entrada_tabla *entrada = buscar_variable((yyvsp[-2].nombre));
+                    if (entrada == NULL){
+                        printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", (yyvsp[-2].nombre));
+                        (yyval.nombre) = strdup("");
+                    } else {
+                        char buf[512];
+                        snprintf(buf, sizeof(buf), "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, (yyvsp[0].nombre));
+                        (yyval.nombre) = strdup(buf);
+                    }
+                    free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                }
+#line 1671 "y.tab.c"
+    break;
+
+  case 46: /* expresion: ID  */
+#line 320 "parser.y"
+               {
                 struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
                 if (entrada == NULL) {
                     printf("Error semántico: '%s' no declarada.\n", (yyvsp[0].nombre));
@@ -1621,65 +1685,65 @@ yyreduce:
                 }
                 free((yyvsp[0].nombre));
           }
-#line 1625 "y.tab.c"
+#line 1689 "y.tab.c"
     break;
 
-  case 39: /* expresion_loop: NUMERO  */
-#line 295 "parser.y"
+  case 47: /* expresion: NUMERO  */
+#line 333 "parser.y"
                    {
                 char buf[50];
                 sprintf(buf, "%g", (yyvsp[0].val_num));
                 (yyval.nombre) = strdup(buf);
           }
-#line 1635 "y.tab.c"
+#line 1699 "y.tab.c"
     break;
 
-  case 40: /* expresion_loop: expresion_loop '+' expresion_loop  */
-#line 300 "parser.y"
-                                              {
+  case 48: /* expresion: expresion '+' expresion  */
+#line 338 "parser.y"
+                                    {
                 char buf[256];
                 sprintf(buf, "%s + %s", (yyvsp[-2].nombre), (yyvsp[0].nombre));
                 (yyval.nombre) = strdup(buf);
                 free((yyvsp[-2].nombre)); free((yyvsp[0].nombre)); // Limpiamos memoria de los hijos
           }
-#line 1646 "y.tab.c"
+#line 1710 "y.tab.c"
     break;
 
-  case 41: /* expresion_loop: expresion_loop '-' expresion_loop  */
-#line 306 "parser.y"
-                                              {
+  case 49: /* expresion: expresion '-' expresion  */
+#line 344 "parser.y"
+                                    {
                 char buf[256];
                 sprintf(buf, "%s - %s", (yyvsp[-2].nombre), (yyvsp[0].nombre));
                 (yyval.nombre) = strdup(buf);
                 free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
           }
-#line 1657 "y.tab.c"
+#line 1721 "y.tab.c"
     break;
 
-  case 42: /* expresion_loop: expresion_loop '*' expresion_loop  */
-#line 312 "parser.y"
-                                              {
+  case 50: /* expresion: expresion '*' expresion  */
+#line 350 "parser.y"
+                                    {
                 char buf[256];
                 sprintf(buf, "%s * %s", (yyvsp[-2].nombre), (yyvsp[0].nombre));
                 (yyval.nombre) = strdup(buf);
                 free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
           }
-#line 1668 "y.tab.c"
+#line 1732 "y.tab.c"
     break;
 
-  case 43: /* expresion_loop: '(' expresion_loop ')'  */
-#line 318 "parser.y"
-                                   {
+  case 51: /* expresion: '(' expresion ')'  */
+#line 356 "parser.y"
+                              {
                 char buf[256];
                 sprintf(buf, "(%s)", (yyvsp[-1].nombre));
                 (yyval.nombre) = strdup(buf);
                 free((yyvsp[-1].nombre));
           }
-#line 1679 "y.tab.c"
+#line 1743 "y.tab.c"
     break;
 
 
-#line 1683 "y.tab.c"
+#line 1747 "y.tab.c"
 
       default: break;
     }
@@ -1872,7 +1936,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 328 "parser.y"
+#line 366 "parser.y"
 
 
 /* Inclusión rústica del analizador léxico al final del archivo */

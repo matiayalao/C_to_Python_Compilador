@@ -9,4 +9,6 @@
 	while(i){
 		int e = x + y;
 	}
+
+	z = 4, i = 1 -z;
 }
