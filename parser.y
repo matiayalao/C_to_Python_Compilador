@@ -79,6 +79,7 @@ instruccion : declaracion
            | asignacion
            | bloque
            | loop
+           | condicionales
            ;
 
 declaracion : prefijo_declaracion declarar_lista_ids ';' { es_constante_actual = 0; }
@@ -172,7 +173,11 @@ declarar_lista_ids : ID {
          }
          ;
 
-lista_asignaciones : ID '=' expresion {
+lista_asignaciones : asignacion_unitaria
+                   | lista_asignaciones ',' asignacion_unitaria
+                   ;
+
+asignacion_unitaria : ID '=' expresion {
                         struct entrada_tabla *entrada = buscar_variable($1);
                         if (entrada == NULL){
                             printf("Error semántico: la variable '%s' no existe.\n", $1);
@@ -181,20 +186,58 @@ lista_asignaciones : ID '=' expresion {
                             fprintf(yyout_py, "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, $3);
                         }
                         free($1); free($3);
-                   }
-                   | lista_asignaciones ',' ID '=' expresion {
+                    }
+                    | ID'+''+' {
+                        struct entrada_tabla *entrada = buscar_variable($1);
+                        if (entrada == NULL){
+                            printf("Error semántico: la variable '%s' no existe.\n", $1);
+                        } else {
+                            imprimir_indentacion();
+                            fprintf(yyout_py, "%s_%d += 1\n", entrada->nombre, entrada->id_entorno_declarado);
+                        }
+                        free($1);
+                    }
+                    | ID'-''-' {
+                        struct entrada_tabla *entrada = buscar_variable($1);
+                        if (entrada == NULL){
+                            printf("Error semántico: la variable '%s' no existe.\n", $1);
+                        } else {
+                            imprimir_indentacion();
+                            fprintf(yyout_py, "%s_%d -= 1\n", entrada->nombre, entrada->id_entorno_declarado);
+                        }
+                        free($1);
+                    }
+                    | '+''+'ID {
                         struct entrada_tabla *entrada = buscar_variable($3);
                         if (entrada == NULL){
                             printf("Error semántico: la variable '%s' no existe.\n", $3);
                         } else {
                             imprimir_indentacion();
-                            fprintf(yyout_py, "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, $5);
+                            fprintf(yyout_py, "%s_%d += 1\n", entrada->nombre, entrada->id_entorno_declarado);
                         }
-                        free($3); free($5);
-                   }
-                   | ID { free($1); }
-                   | lista_asignaciones ',' ID { free($3); }
-                   ;
+                        free($3);
+                    }
+                    | '-''-'ID {
+                        struct entrada_tabla *entrada = buscar_variable($3);
+                        if (entrada == NULL){
+                            printf("Error semántico: la variable '%s' no existe.\n", $3);
+                        } else {
+                            imprimir_indentacion();
+                            fprintf(yyout_py, "%s_%d -= 1\n", entrada->nombre, entrada->id_entorno_declarado);
+                        }
+                        free($3);
+                    }
+                    | ID {
+                        struct entrada_tabla *entrada = buscar_variable($1);
+                        if (entrada == NULL){
+                            printf("Error semántico: la variable '%s' no existe.\n", $1);
+                        } else {
+                            imprimir_indentacion();
+                            fprintf(yyout_py, "%s_%d\n", entrada->nombre, entrada->id_entorno_declarado);
+                        }
+                        free($1);
+                    }
+                    ;
 
 loop : FOR {
             struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
@@ -361,7 +404,53 @@ expresion : ID {
           }
           ;
 
+    condicionales: IF '(' {fprintf(yyout_py, "if(");} condicion_IF')' {
+        fprintf(yyout_py, ")\n");
+        nivel_indentacion++;}'{' instrucciones '}' { nivel_indentacion--;}
 
+    condicion_IF: expresion '=' expresion {
+                    imprimir_indentacion();
+                    fprintf(yyout_py, "%s = %s", $1, $3);
+                    nivel_indentacion++;
+                    free($1); free($3);
+            }
+               | expresion '>' expresion {
+                    imprimir_indentacion();
+                    fprintf(yyout_py, "%s > %s", $1, $3);
+                    nivel_indentacion++;
+                    free($1); free($3);
+            }
+               | expresion '<' expresion {
+                    imprimir_indentacion();
+                    fprintf(yyout_py, "%s < %s", $1, $3);
+                    nivel_indentacion++;
+                    free($1); free($3);
+            }
+               | expresion MAYOR_IGUAL expresion {
+                    imprimir_indentacion();
+                    fprintf(yyout_py, "%s >= %s", $1, $3);
+                    nivel_indentacion++;
+                    free($1); free($3);
+            }
+               | expresion MENOR_IGUAL expresion { // NUMERO '<=' ID
+                    imprimir_indentacion();
+                    fprintf(yyout_py, "%s <= %s", $1, $3);
+                    nivel_indentacion++;
+                    free($1); free($3);
+            }
+               | expresion IGUAL_IGUAL expresion {
+                    imprimir_indentacion();
+                    fprintf(yyout_py, "%s == %s", $1, $3);
+                    nivel_indentacion++;
+                    free($1); free($3);
+            }
+            | expresion {
+                    imprimir_indentacion();
+                    fprintf(yyout_py, "%s", $1);
+                    nivel_indentacion++;
+                    free($1);
+            }
+            ;
 
 %%
 

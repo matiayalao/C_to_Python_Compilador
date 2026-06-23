@@ -8,7 +8,10 @@ int main(){
 	for(int i = 0; i < 10; i++){
 		int z = 20;
 	}
-
-	z = 20;
+	
+	if(x < 20){
+		x = 20;
+	}
+	
 	return 0;
 }

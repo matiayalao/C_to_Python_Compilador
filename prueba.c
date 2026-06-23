@@ -1,6 +1,6 @@
 {
 
-	int i = 20, t = 20 + 4,x,y;
+	int i = 20, t = 20 + 4,x,y = 20;
 	for(int i = 0, y = 20; i; i++){
 		int z = 90;
 		int h = 3;
@@ -10,5 +10,12 @@
 		int e = x + y;
 	}
 
-	z = 4, i = 1 -z;
+	i = 1;
+
+	if(i = 1){
+	   for(int x = 20; y < 20; y++){
+		t++;
+	   }
+	}
+
 }
