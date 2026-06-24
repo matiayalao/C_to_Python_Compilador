@@ -17,6 +17,10 @@ numero  {digito}+(\.{digito}+)?
 "if"        { return(IF); }
 "else"      { return(ELSE); }
 "while"     { return(WHILE); }
+"switch"    { return(SWITCH); }
+"case"      { return(CASE); }
+"break"     { return(BREAK); }
+"default"   { return(DEFAULT); }
 "return"    { return(RETURN); }
 "for"       { return(FOR); }
 
@@ -43,6 +47,7 @@ numero  {digito}+(\.{digito}+)?
 ">"         { return('>'); }
 "("         { return('('); }
 ")"         { return(')'); }
+":"         { return(':'); }
 
 .           { printf("Error léxico: caracter inválido %s\n", yytext); }
 %%

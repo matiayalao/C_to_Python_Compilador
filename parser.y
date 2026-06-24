@@ -36,8 +36,8 @@ para que tenga compartimentos de distintos tipos de datos.*/
 }
 
 /* DECLARAMOS LOS TOKENS Y LE ASIGNAMOS EL TIPO DE LA UNION A ID */
-%token IF ELSE WHILE RETURN INT FLOAT CHAR CONST DOUBLE FOR 
-%token MAYOR_IGUAL IGUAL_IGUAL MENOR_IGUAL
+%token IF ELSE WHILE RETURN INT FLOAT CHAR CONST DOUBLE FOR SWITCH CASE 
+%token MAYOR_IGUAL IGUAL_IGUAL MENOR_IGUAL BREAK DEFAULT
 %token <nombre> ID
 %token <val_num> NUMERO 
 %type <nombre> loop_consecuencia
@@ -48,8 +48,8 @@ para que tenga compartimentos de distintos tipos de datos.*/
 
 %%
 
-programa : instrucciones
-         ;
+programa: instrucciones
+        ;
 
 bloque   : '{' {
                 /* Acción intermedia: Al abrir '{', creamos entorno local */
@@ -74,7 +74,6 @@ instrucciones : instrucciones instruccion
              | /* vacío (regla lambda) */
              ;
 
-/* AQUÍ ESTÁ EL SECRETO: Una instrucción puede ser una declaración O un bloque nuevo */
 instruccion : declaracion 
            | asignacion
            | bloque
@@ -273,6 +272,7 @@ loop : FOR {
 
 condicion_loop : expresion '=' expresion {
                     imprimir_indentacion();
+                    printf("Error: aunque C acepte la forma loop('expresion = expresion'), python no lo hace, por favor, correjir la línea %d.\n", yylineno);
                     fprintf(yyout_py, "while %s = %s:\n", $1, $3);
                     nivel_indentacion++;
                     free($1); free($3);
@@ -404,50 +404,113 @@ expresion : ID {
           }
           ;
 
-    condicionales: IF '(' {fprintf(yyout_py, "if(");} condicion_IF')' {
-        fprintf(yyout_py, ")\n");
-        nivel_indentacion++;}'{' instrucciones '}' { nivel_indentacion--;}
+    condicionales: IF '(' {
+            imprimir_indentacion();
+            fprintf(yyout_py, "if ");
+        } condicion_IF ')' {
+            fprintf(yyout_py, ":\n");
+            nivel_indentacion++;
+        } '{' instrucciones '}' { 
+            nivel_indentacion--;
+        } bloque_else
+        | SWITCH '(' expresion ')' {
+            
+        }'{' {
+            /*if($1 == float){
+                printf("Error, prohibida sintaxis para switch, la expresion debe ser entera, arreglar linea %d\n", yylineno);
+             } TODO cambiar esto cuando ya tengamos un verificador de tipos*/ 
+            imprimir_indentacion();
+            fprintf(yyout_py, "match %s:\n", $3);
+            nivel_indentacion++;
+            free($3);
+        } switch_cases '}' {
+            nivel_indentacion--;
+        }
+        ;
+
+    bloque_else: ELSE IF '(' { 
+                // Traducimos el 'else if' de C al 'elif' de Python
+                imprimir_indentacion(); 
+                fprintf(yyout_py, "elif "); 
+           } 
+           condicion_IF ')' { 
+                fprintf(yyout_py, ":\n"); 
+                nivel_indentacion++;
+           } 
+           '{' instrucciones '}' {
+                nivel_indentacion--;
+           } bloque_else
+         
+         | ELSE { 
+                // El caso base de cierre: un 'else:' simple
+                imprimir_indentacion(); 
+                fprintf(yyout_py, "else:\n"); 
+                nivel_indentacion++;
+           } 
+           '{' instrucciones '}' {
+                nivel_indentacion--;
+           }
+         
+         | /* vacío (regla lambda por si el IF no tiene ningún ELSE) */
+         ;
+
+    switch_cases: CASE expresion ':'{
+                    if (strchr($2, '_') != NULL) {
+                        printf("[Error Semántico] Línea %d: El valor del 'case' debe ser una constante, no una variable ('%s').\n", yylineno, $2);
+                    } //si expresion trae un _ en su nombre, significa que es una variable, algo prohbido en c
+                    imprimir_indentacion();
+                    fprintf(yyout_py, "case %s:\n", $2);
+                    nivel_indentacion++; //subimos la indentación para las instrucciones de este case específico
+                    free($2);
+    } instrucciones BREAK ';' {
+        nivel_indentacion--;
+    } switch_cases
+                | DEFAULT ':' {
+                    // Opcional: Agregamos soporte para el 'default:' de C -> 'case _:' de Python
+                    imprimir_indentacion();
+                    fprintf(yyout_py, "case _:\n");
+                    nivel_indentacion++;
+              }
+              instrucciones {
+                    nivel_indentacion--;
+              }
+                | error switch_cases { 
+                    // Si algo falla dentro de un case, Bison limpia la pila 
+                    // hasta encontrar el inicio del Siguiente CASE o el cierre '}'
+                    printf("[Error Sintáctico] Línea %d: 'case' mal formado o falta ';' tras el break.\n", yylineno);
+                    yyerrok; // Indica a Bison que ya retomamos el control
+              }
+
+            | /* vacío */
+            ;
 
     condicion_IF: expresion '=' expresion {
-                    imprimir_indentacion();
+                    printf("Error: aunque C acepte la forma condicional('expresion = expresion'), python no lo hace, por favor, corregir la línea %d.\n", yylineno);
                     fprintf(yyout_py, "%s = %s", $1, $3);
-                    nivel_indentacion++;
                     free($1); free($3);
             }
                | expresion '>' expresion {
-                    imprimir_indentacion();
                     fprintf(yyout_py, "%s > %s", $1, $3);
-                    nivel_indentacion++;
                     free($1); free($3);
             }
                | expresion '<' expresion {
-                    imprimir_indentacion();
                     fprintf(yyout_py, "%s < %s", $1, $3);
-                    nivel_indentacion++;
                     free($1); free($3);
             }
                | expresion MAYOR_IGUAL expresion {
-                    imprimir_indentacion();
                     fprintf(yyout_py, "%s >= %s", $1, $3);
-                    nivel_indentacion++;
                     free($1); free($3);
             }
                | expresion MENOR_IGUAL expresion { // NUMERO '<=' ID
-                    imprimir_indentacion();
                     fprintf(yyout_py, "%s <= %s", $1, $3);
-                    nivel_indentacion++;
                     free($1); free($3);
             }
                | expresion IGUAL_IGUAL expresion {
-                    imprimir_indentacion();
                     fprintf(yyout_py, "%s == %s", $1, $3);
-                    nivel_indentacion++;
                     free($1); free($3);
             }
             | expresion {
-                    imprimir_indentacion();
                     fprintf(yyout_py, "%s", $1);
-                    nivel_indentacion++;
                     free($1);
             }
             ;

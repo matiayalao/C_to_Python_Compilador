@@ -1,4 +1,4 @@
-{
+
 
 	int i = 20, t = 20 + 4,x,y = 20;
 	for(int i = 0, y = 20; i; i++){
@@ -12,10 +12,23 @@
 
 	i = 1;
 
-	if(i = 1){
+	if(i == 1){
 	   for(int x = 20; y < 20; y++){
 		t++;
 	   }
 	}
 
-}
+	switch(x){
+		case 3:
+			i = 20;
+			break;
+		case i:
+			int g = 20 + i;
+			break;
+	}
+
+	if(i == 2){
+		i++;
+	}
+
+
