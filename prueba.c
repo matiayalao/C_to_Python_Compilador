@@ -45,7 +45,7 @@ int tocha(){
 	return i + 20;
 }
 
-tocha();
+tocha(x + y);
 
 
 

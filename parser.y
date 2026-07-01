@@ -585,7 +585,7 @@ parametro_void : tipo ID { //realmente es malo este nombre parametro_void, porqu
             } declaracion_variables_funcion ')' {
                 fprintf(yyout_py, "):\n");
                 nivel_indentacion++;
-            } '{' instrucciones RETURN expresion ';' '}' { //debilidad
+            } '{' instrucciones RETURN expresion ';' '}' { //debilidad, no puede haber más de 1 return, y encima el bloque de la funcion debe terminar sí o sí con un return
                 nivel_indentacion--;
                 struct Entorno *viejo = entorno_actual;
                 entorno_actual = entorno_actual->padre;

@@ -1,6 +1,9 @@
 #include <stdio.h>
 int g = 20;
 
+void funcion(int a){
+	printf("En efecto, entramos, %d",g);
+}
 
 int main(){
 	int x, y;
@@ -14,14 +17,11 @@ int main(){
 	if(x < 20){
 		x = 20;
 	}
-	const int a;
+	const int a = 30;
 
-	funcion(a);
+	funcion(a + x);
 	
 	return 0;
 }
 
 
-void funcion(const int a){
-	printf("En efecto, entramos, %d",g);
-}
