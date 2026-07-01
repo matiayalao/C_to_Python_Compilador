@@ -28,6 +28,7 @@ numero  {digito}+(\.{digito}+)?
 "float"     { return(FLOAT); }
 "char"      { return(CHAR); }
 "const"     { return(CONST); }
+"void"      { return(VOID); }
 
 {id}        { yylval.nombre = strdup(yytext); return(ID); }
 {numero}    { yylval.val_num = atof(yytext); return(NUMERO); }

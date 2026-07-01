@@ -19,7 +19,13 @@ if i_0 == 1:
 match x_0:
     case 3:
         i_0 = 20
-    case i_0:
+    case 2:
         g_0 = 20 + i_0
 if i_0 == 2:
     i_0 += 1
+def funcion(g_2, h_2):
+    e_2 = i_0 + 3
+def tocha():
+    while i_0 < 20:
+        i_0 = 20
+tocha()

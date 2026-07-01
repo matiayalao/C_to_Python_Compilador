@@ -22,7 +22,7 @@
 		case 3:
 			i = 20;
 			break;
-		case i:
+		case 2:
 			int g = 20 + i;
 			break;
 	}
@@ -30,5 +30,22 @@
 	if(i == 2){
 		i++;
 	}
+
+void funcion(int g, float h){
+	int e = i +3;
+
+}
+
+int tocha(){
+
+
+	while(i < 20){
+		i = 20;
+	}
+	return i + 20;
+}
+
+tocha();
+
 
 

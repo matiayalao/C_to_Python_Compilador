@@ -36,7 +36,7 @@ para que tenga compartimentos de distintos tipos de datos.*/
 }
 
 /* DECLARAMOS LOS TOKENS Y LE ASIGNAMOS EL TIPO DE LA UNION A ID */
-%token IF ELSE WHILE RETURN INT FLOAT CHAR CONST DOUBLE FOR SWITCH CASE 
+%token IF ELSE WHILE RETURN INT FLOAT CHAR CONST DOUBLE FOR SWITCH CASE VOID
 %token MAYOR_IGUAL IGUAL_IGUAL MENOR_IGUAL BREAK DEFAULT
 %token <nombre> ID
 %token <val_num> NUMERO 
@@ -79,6 +79,9 @@ instruccion : declaracion
            | bloque
            | loop
            | condicionales
+           | funcion_void
+           | funcion_NO_void
+           | llamar_funcion
            ;
 
 declaracion : prefijo_declaracion declarar_lista_ids ';' { es_constante_actual = 0; }
@@ -258,13 +261,7 @@ loop : FOR {
             entorno_actual = entorno_actual->padre;
             free(viejo);
     }
-    | WHILE '(' expresion ')''{' {
-        /* Acción intermedia: Abrimos entorno y loop */
-        imprimir_indentacion();
-        fprintf(yyout_py, "while %s:\n", $3);
-        nivel_indentacion++;
-        free($3); // Liberamos el string de la expresión
-    } instrucciones '}' {    
+    | WHILE '(' condicion_loop ')''{' instrucciones '}' {    
         nivel_indentacion--;
     }
     ;
@@ -514,6 +511,119 @@ expresion : ID {
                     free($1);
             }
             ;
+
+declaracion_variables_funcion : lista_parametros
+                          | /* vacío (por si la función no recibe parámetros) */
+                          ;
+
+lista_parametros : parametro_void
+                 | lista_parametros ',' { 
+                        // TRUCO: Imprimimos la coma y un espacio justo cuando Bison detecta el token ','
+                        fprintf(yyout_py, ", "); 
+                   } 
+                   parametro_void
+                 ;
+
+parametro_void : tipo ID { //realmente es malo este nombre parametro_void, porque las funciones que no son void tambien usan esta gramatica, pero no se me ocurre un nombre bueno y que no sea largo, y tampoco importa tanto
+                struct entrada_tabla *entrada = declarar_variable($2);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' ya fue declarada.\n", $2);
+                } else {
+                    entrada->tipo_base = tipo_actual;
+                    entrada->id_entorno_declarado = entorno_actual->id_entorno;
+
+                    if(es_constante_actual == 1) entrada->es_constante = 1;
+
+                    // Imprimimos el nombre limpio directamente en Python, sin indentación extra
+                    fprintf(yyout_py, "%s_%d", $2, entorno_actual->id_entorno);
+                }
+                free($2);
+          }
+          ;
+
+            funcion_void: VOID ID '(' {
+                struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
+                nuevo->tabla_simbolos = NULL;
+                nuevo->cantidad_simbolos = 0;
+                nuevo->capacidad_tabla = 0;
+                nuevo->padre = entorno_actual;
+                nuevo->id_entorno = contador_entornos++; 
+                entorno_actual = nuevo; 
+                imprimir_indentacion();
+                fprintf(yyout_py, "def %s(", $2);
+                free($2);
+            } declaracion_variables_funcion ')' {
+                fprintf(yyout_py, "):\n");
+                nivel_indentacion++;
+            } '{' instrucciones '}' {
+                nivel_indentacion--;
+                struct Entorno *viejo = entorno_actual;
+                entorno_actual = entorno_actual->padre;
+                free(viejo);
+            }
+
+            funcion_NO_void: prefijo_declaracion ID '(' { //estaba 'tipo' en vez de prefijo_declaracion, quilombo era
+                struct entrada_tabla *entrada = declarar_variable($2);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' ya fue declarada.\n", $2);
+                } else {
+                    entrada->tipo_base = tipo_actual;
+                    entrada->id_entorno_declarado = entorno_actual->id_entorno;
+
+                    if(es_constante_actual == 1) entrada->es_constante = 1;
+                }
+                struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
+                nuevo->tabla_simbolos = NULL;
+                nuevo->cantidad_simbolos = 0;
+                nuevo->capacidad_tabla = 0;
+                nuevo->padre = entorno_actual;
+                nuevo->id_entorno = contador_entornos++; 
+                entorno_actual = nuevo; 
+                imprimir_indentacion();
+                fprintf(yyout_py, "def %s(", $2);
+                free($2);
+            } declaracion_variables_funcion ')' {
+                fprintf(yyout_py, "):\n");
+                nivel_indentacion++;
+            } '{' instrucciones RETURN expresion ';' '}' { //debilidad
+                nivel_indentacion--;
+                struct Entorno *viejo = entorno_actual;
+                entorno_actual = entorno_actual->padre;
+                free(viejo);
+            }
+
+
+
+
+            llamar_funcion: ID '(' {
+                struct entrada_tabla *entrada = buscar_variable($1);
+                        if (entrada == NULL){
+                            printf("Error semántico: la variable '%s' no existe.\n", $1);
+                        }
+                imprimir_indentacion();
+                fprintf(yyout_py, "%s(", $1);
+                free($1);
+            } usar_variables_funcion ')' {
+                fprintf(yyout_py, ")\n");
+            } ';'
+            ;
+
+            usar_variables_funcion : lista_parametros_llamar_funcion
+                          | /* vacío (por si la función no recibe parámetros) */
+                          ;
+
+lista_parametros_llamar_funcion : parametro_llamar_funcion
+                 | lista_parametros_llamar_funcion ',' { 
+                        // TRUCO: Imprimimos la coma y un espacio justo cuando Bison detecta el token ','
+                        fprintf(yyout_py, ", "); 
+                   } 
+                   parametro_llamar_funcion
+                 ;
+
+    parametro_llamar_funcion : expresion { 
+        fprintf(yyout_py, "%s", $1); 
+        free($1); 
+    }
 
 %%
 
