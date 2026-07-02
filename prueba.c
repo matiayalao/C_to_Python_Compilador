@@ -1,10 +1,13 @@
 
 
 	int i = 20, t = 20 + 4,x,y = 20;
+	float floa = 31.4, ggg = 3.1;
 	for(int i = 0, y = 20; i; i++){
 		int z = 90;
 		int h = 3;
 	}
+
+	float suma = floa * z;
 
 	while(i){
 		int e = x + y;

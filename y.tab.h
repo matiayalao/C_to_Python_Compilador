@@ -107,12 +107,13 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 31 "parser.y"
+#line 36 "parser.y"
 
     char *nombre;     
     double val_num;   
+    struct InfoExpresion *info_expr;
 
-#line 116 "y.tab.h"
+#line 117 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

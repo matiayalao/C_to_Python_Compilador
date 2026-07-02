@@ -24,7 +24,10 @@ void imprimir_indentacion() {
     }
 }
 
-
+struct InfoExpresion {
+        char *codigo;
+        int tipo_dato; 
+    };
 
 %}
 
@@ -33,6 +36,7 @@ para que tenga compartimentos de distintos tipos de datos.*/
 %union {
     char *nombre;     
     double val_num;   
+    struct InfoExpresion *info_expr;
 }
 
 /* DECLARAMOS LOS TOKENS Y LE ASIGNAMOS EL TIPO DE LA UNION A ID */
@@ -45,7 +49,7 @@ para que tenga compartimentos de distintos tipos de datos.*/
 
 %left '+' '-'
 %left '*' '/'
-%type <nombre> expresion 
+%type <info_expr> expresion 
 
 %%
 
@@ -154,7 +158,7 @@ declarar_lista_ids : ID {
                     
                     // --- GENERACIÓN DE CÓDIGO PYTHON ---
                     imprimir_indentacion(); // <-- Indentamos
-                    fprintf(yyout_py, "%s_%d = %s\n", $1, entorno_actual->id_entorno, $3);
+                    fprintf(yyout_py, "%s_%d = %s\n", $1, entorno_actual->id_entorno, $3->codigo);
                 }
                 free($1);
          }
@@ -171,7 +175,7 @@ declarar_lista_ids : ID {
                     
                     
                     imprimir_indentacion(); // Indentamos
-                    fprintf(yyout_py, "%s_%d = %s\n", $3, entorno_actual->id_entorno, $5);
+                    fprintf(yyout_py, "%s_%d = %s\n", $3, entorno_actual->id_entorno, $5->codigo);
                 }
                 free($3);
          }
@@ -187,7 +191,7 @@ asignacion_unitaria : ID '=' expresion {
                             printf("Error semántico: la variable '%s' no existe.\n", $1);
                         } else {
                             imprimir_indentacion();
-                            fprintf(yyout_py, "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, $3);
+                            fprintf(yyout_py, "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, $3->codigo);
                         }
                         free($1); free($3);
                     }
@@ -272,45 +276,45 @@ loop : FOR {
 condicion_loop : expresion '=' expresion {
                     imprimir_indentacion();
                     printf("Error: aunque C acepte la forma loop('expresion = expresion'), python no lo hace, por favor, correjir la línea %d.\n", yylineno);
-                    fprintf(yyout_py, "while %s = %s:\n", $1, $3);
+                    fprintf(yyout_py, "while %s = %s:\n", $1->codigo, $3->codigo);
                     nivel_indentacion++;
                     free($1); free($3);
             }
                | expresion '>' expresion {
                     imprimir_indentacion();
-                    fprintf(yyout_py, "while %s > %s:\n", $1, $3);
+                    fprintf(yyout_py, "while %s > %s:\n", $1->codigo, $3->codigo);
                     nivel_indentacion++;
                     free($1); free($3);
             }
                | expresion '<' expresion {
                     imprimir_indentacion();
-                    fprintf(yyout_py, "while %s < %s:\n", $1, $3);
+                    fprintf(yyout_py, "while %s < %s:\n", $1->codigo, $3->codigo);
                     nivel_indentacion++;
                     free($1); free($3);
             }
                | expresion MAYOR_IGUAL expresion {
                     imprimir_indentacion();
-                    fprintf(yyout_py, "while %s >= %s:\n", $1, $3);
+                    fprintf(yyout_py, "while %s >= %s:\n", $1->codigo, $3->codigo);
                     nivel_indentacion++;
-                    free($1); free($3);
+                    free($1->codigo); free($1); free($3->codigo); free($3);
             }
                | expresion MENOR_IGUAL expresion { // NUMERO '<=' ID
                     imprimir_indentacion();
-                    fprintf(yyout_py, "while %s <= %s:\n", $1, $3);
+                    fprintf(yyout_py, "while %s <= %s:\n", $1->codigo, $3->codigo);
                     nivel_indentacion++;
-                    free($1); free($3);
+                    free($1->codigo); free($1); free($3->codigo); free($3);
             }
                | expresion IGUAL_IGUAL expresion {
                     imprimir_indentacion();
-                    fprintf(yyout_py, "while %s == %s:\n", $1, $3);
+                    fprintf(yyout_py, "while %s == %s:\n", $1->codigo, $3->codigo);
                     nivel_indentacion++;
-                    free($1); free($3);
+                    free($1->codigo); free($1); free($3->codigo); free($3);
             }
             | expresion {
                     imprimir_indentacion();
-                    fprintf(yyout_py, "while %s:\n", $1);
+                    fprintf(yyout_py, "while %s:\n", $1->codigo);
                     nivel_indentacion++;
-                    free($1);
+                    free($1->codigo); free($1);
             }
             ;
 
@@ -352,7 +356,7 @@ loop_consecuencia: ID {
                         $$ = strdup("");
                     } else {
                         char buf[512];
-                        snprintf(buf, sizeof(buf), "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, $3);
+                        snprintf(buf, sizeof(buf), "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, $3->codigo);
                         $$ = strdup(buf);
                     }
                     free($1); free($3);
@@ -360,46 +364,82 @@ loop_consecuencia: ID {
                 ;
 
 expresion : ID {
+                $$ = malloc(sizeof(struct InfoExpresion));
                 struct entrada_tabla *entrada = buscar_variable($1);
                 if (entrada == NULL) {
                     printf("Error semántico: '%s' no declarada.\n", $1);
-                    $$ = strdup($1); 
+                    $$->codigo = strdup($1); 
+                    $$->tipo_dato = T_INT; // Asumimos INT por defecto si hay error
                 } else {
                     // Si existe, generamos su nombre real de Python con su entorno: ej "i_1"
                     char buf[100];
                     sprintf(buf, "%s_%d", entrada->nombre, entrada->id_entorno_declarado);
-                    $$ = strdup(buf);
+                    $$->codigo = strdup(buf);
+                    $$->tipo_dato = entrada->tipo_base;
                 }
                 free($1);
           }
           | NUMERO {
+            $$ = malloc(sizeof(struct InfoExpresion));
                 char buf[50];
                 sprintf(buf, "%g", $1);
-                $$ = strdup(buf);
+                $$->codigo = strdup(buf);
+                $$->tipo_dato = T_INT; // <-- ¡Faltaba esto!
           }
           | expresion '+' expresion {
+                $$ = malloc(sizeof(struct InfoExpresion));
                 char buf[256];
-                sprintf(buf, "%s + %s", $1, $3);
-                $$ = strdup(buf);
-                free($1); free($3); // Limpiamos memoria de los hijos
+                sprintf(buf, "%s + %s", $1->codigo, $3->codigo);
+                $$->codigo = strdup(buf);
+                if ($1->tipo_dato != $3->tipo_dato) {
+                        printf("[Error Semántico] Línea %d: Tipos incompatibles en la suma.\n", yylineno);
+                }
+                // 3. Heredamos el tipo (Asumimos que si llegamos acá el resultado es del mismo tipo)
+                $$->tipo_dato = $1->tipo_dato; // <-- ¡Faltaba esto!
+                
+                free($1->codigo); free($1);
+                free($3->codigo); free($3);
           }
           | expresion '-' expresion {
+                $$ = malloc(sizeof(struct InfoExpresion));
                 char buf[256];
-                sprintf(buf, "%s - %s", $1, $3);
-                $$ = strdup(buf);
-                free($1); free($3);
+                sprintf(buf, "%s - %s", $1->codigo, $3->codigo);
+                $$->codigo = strdup(buf);
+                
+                if ($1->tipo_dato != $3->tipo_dato) {
+                    printf("[Error Semántico] Línea %d: Tipos incompatibles en la resta.\n", yylineno);
+                }
+                
+                $$->tipo_dato = $1->tipo_dato;
+                
+                free($1->codigo); free($1);
+                free($3->codigo); free($3);
           }
           | expresion '*' expresion {
+                $$ = malloc(sizeof(struct InfoExpresion));
                 char buf[256];
-                sprintf(buf, "%s * %s", $1, $3);
-                $$ = strdup(buf);
-                free($1); free($3);
+                sprintf(buf, "%s * %s", $1->codigo, $3->codigo);
+                $$->codigo = strdup(buf);
+                
+                if ($1->tipo_dato != $3->tipo_dato) {
+                    printf("[Error Semántico] Línea %d: Tipos incompatibles en la multiplicación.\n", yylineno);
+                }
+                
+                $$->tipo_dato = $1->tipo_dato;
+                
+                free($1->codigo); free($1);
+                free($3->codigo); free($3);
           }
           | '(' expresion ')' {
+                $$ = malloc(sizeof(struct InfoExpresion));
                 char buf[256];
-                sprintf(buf, "(%s)", $2);
-                $$ = strdup(buf);
-                free($2);
+                sprintf(buf, "(%s)", $2->codigo);
+                $$->codigo = strdup(buf);
+                
+                // Los paréntesis no cambian el tipo, solo lo pasan hacia arriba
+                $$->tipo_dato = $2->tipo_dato; 
+                
+                free($2->codigo); free($2);
           }
           ;
 
@@ -419,7 +459,7 @@ expresion : ID {
                 printf("Error, prohibida sintaxis para switch, la expresion debe ser entera, arreglar linea %d\n", yylineno);
              } TODO cambiar esto cuando ya tengamos un verificador de tipos*/ 
             imprimir_indentacion();
-            fprintf(yyout_py, "match %s:\n", $3);
+            fprintf(yyout_py, "match %s:\n", $3->codigo);
             nivel_indentacion++;
             free($3);
         } switch_cases '}' {
@@ -454,11 +494,11 @@ expresion : ID {
          ;
 
     switch_cases: CASE expresion ':'{
-                    if (strchr($2, '_') != NULL) {
-                        printf("[Error Semántico] Línea %d: El valor del 'case' debe ser una constante, no una variable ('%s').\n", yylineno, $2);
+                    if (strchr($2->codigo, '_') != NULL) {
+                        printf("[Error Semántico] Línea %d: El valor del 'case' debe ser una constante, no una variable ('%s').\n", yylineno, $2->codigo);
                     } //si expresion trae un _ en su nombre, significa que es una variable, algo prohbido en c
                     imprimir_indentacion();
-                    fprintf(yyout_py, "case %s:\n", $2);
+                    fprintf(yyout_py, "case %s:\n", $2->codigo);
                     nivel_indentacion++; //subimos la indentación para las instrucciones de este case específico
                     free($2);
     } instrucciones BREAK ';' {
@@ -485,32 +525,32 @@ expresion : ID {
 
     condicion_IF: expresion '=' expresion {
                     printf("Error: aunque C acepte la forma condicional('expresion = expresion'), python no lo hace, por favor, corregir la línea %d.\n", yylineno);
-                    fprintf(yyout_py, "%s = %s", $1, $3);
+                    fprintf(yyout_py, "%s = %s", $1->codigo, $3->codigo);
                     free($1); free($3);
             }
                | expresion '>' expresion {
-                    fprintf(yyout_py, "%s > %s", $1, $3);
+                    fprintf(yyout_py, "%s > %s", $1->codigo, $3->codigo);
                     free($1); free($3);
             }
                | expresion '<' expresion {
-                    fprintf(yyout_py, "%s < %s", $1, $3);
+                    fprintf(yyout_py, "%s < %s", $1->codigo, $3->codigo);
                     free($1); free($3);
             }
                | expresion MAYOR_IGUAL expresion {
-                    fprintf(yyout_py, "%s >= %s", $1, $3);
-                    free($1); free($3);
+                    fprintf(yyout_py, "%s >= %s", $1->codigo, $3->codigo);
+                    free($1->codigo); free($1); free($3->codigo); free($3);
             }
                | expresion MENOR_IGUAL expresion { // NUMERO '<=' ID
-                    fprintf(yyout_py, "%s <= %s", $1, $3);
-                    free($1); free($3);
+                    fprintf(yyout_py, "%s <= %s", $1->codigo, $3->codigo);
+                    free($1->codigo); free($1); free($3->codigo); free($3);
             }
                | expresion IGUAL_IGUAL expresion {
-                    fprintf(yyout_py, "%s == %s", $1, $3);
-                    free($1); free($3);
+                    fprintf(yyout_py, "%s == %s", $1->codigo, $3->codigo);
+                    free($1->codigo); free($1); free($3->codigo); free($3);
             }
             | expresion {
-                    fprintf(yyout_py, "%s", $1);
-                    free($1);
+                    fprintf(yyout_py, "%s", $1->codigo);
+                    free($1->codigo); free($1);
             }
             ;
 
@@ -623,8 +663,8 @@ lista_parametros_llamar_funcion : parametro_llamar_funcion
     ;
 
     parametro_llamar_funcion : expresion { 
-        fprintf(yyout_py, "%s", $1); 
-        free($1); 
+        fprintf(yyout_py, "%s", $1->codigo); 
+        free($1->codigo); 
     }
     ;
 
@@ -700,7 +740,7 @@ lista_inicializadores:
 valor_o_anidado:
     expresion // Tu regla actual que maneja NUMERO, ID, operaciones, etc.
     {
-        $$ = strdup($1);
+        $$ = strdup($1->codigo);
         free($1);
     }
     | inicializador_array

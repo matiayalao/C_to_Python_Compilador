@@ -94,8 +94,13 @@ void imprimir_indentacion() {
     }
 }
 
+struct InfoExpresion {
+        char *codigo;
+        int tipo_dato; 
+    };
 
-#line 99 "y.tab.c"
+
+#line 104 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -189,12 +194,13 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 31 "parser.y"
+#line 36 "parser.y"
 
     char *nombre;     
     double val_num;   
+    struct InfoExpresion *info_expr;
 
-#line 198 "y.tab.c"
+#line 204 "y.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -699,19 +705,19 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,    50,    50,    53,    53,    72,    73,    76,    77,    78,
-      79,    80,    81,    82,    83,    84,    87,    88,    91,    94,
-      95,    98,   100,   101,   104,   105,   106,   107,   110,   126,
-     142,   159,   178,   179,   182,   192,   202,   212,   222,   232,
-     244,   244,   264,   270,   277,   283,   289,   295,   301,   307,
-     315,   324,   335,   346,   360,   373,   378,   384,   390,   396,
-     404,   407,   410,   404,   413,   415,   413,   428,   433,   437,
-     428,   441,   441,   451,   454,   462,   454,   465,   465,   474,
-     481,   484,   489,   493,   497,   501,   505,   509,   515,   516,
-     519,   520,   520,   527,   544,   555,   544,   565,   585,   565,
-     598,   606,   598,   611,   612,   615,   616,   616,   623,   629,
-     630,   633,   634,   637,   659,   663,   670,   682,   687,   700,
-     705
+       0,    56,    56,    59,    59,    78,    79,    82,    83,    84,
+      85,    86,    87,    88,    89,    90,    93,    94,    97,   100,
+     101,   104,   106,   107,   110,   111,   112,   113,   116,   132,
+     148,   165,   184,   185,   188,   198,   208,   218,   228,   238,
+     250,   250,   270,   276,   283,   289,   295,   301,   307,   313,
+     321,   330,   341,   352,   366,   382,   389,   403,   418,   433,
+     446,   449,   452,   446,   455,   457,   455,   470,   475,   479,
+     470,   483,   483,   493,   496,   504,   496,   507,   507,   516,
+     523,   526,   531,   535,   539,   543,   547,   551,   557,   558,
+     561,   562,   562,   569,   586,   597,   586,   607,   627,   607,
+     640,   648,   640,   653,   654,   657,   658,   658,   665,   671,
+     672,   675,   676,   679,   701,   705,   712,   723,   728,   741,
+     746
 };
 #endif
 
@@ -1467,7 +1473,7 @@ yyreduce:
   switch (yyn)
     {
   case 3: /* $@1: %empty  */
-#line 53 "parser.y"
+#line 59 "parser.y"
                {
                 /* Acción intermedia: Al abrir '{', creamos entorno local */
                 struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
@@ -1478,11 +1484,11 @@ yyreduce:
                 nuevo->id_entorno = contador_entornos++; 
                 entorno_actual = nuevo; 
             }
-#line 1482 "y.tab.c"
+#line 1488 "y.tab.c"
     break;
 
   case 4: /* bloque: '{' $@1 instrucciones '}'  */
-#line 63 "parser.y"
+#line 69 "parser.y"
                           {
                 /* Acción final: Al cerrar '}', regresamos de nivel al padre */
                 struct Entorno *viejo = entorno_actual;
@@ -1490,61 +1496,61 @@ yyreduce:
                 
                 /* Opcional: Podés liberar la memoria de 'viejo' aquí si querés */
             }
-#line 1494 "y.tab.c"
-    break;
-
-  case 16: /* declaracion: prefijo_declaracion declarar_lista_ids ';'  */
-#line 87 "parser.y"
-                                                         { es_constante_actual = 0; }
 #line 1500 "y.tab.c"
     break;
 
+  case 16: /* declaracion: prefijo_declaracion declarar_lista_ids ';'  */
+#line 93 "parser.y"
+                                                         { es_constante_actual = 0; }
+#line 1506 "y.tab.c"
+    break;
+
   case 17: /* declaracion: CONST declarar_lista_ids ';'  */
-#line 88 "parser.y"
+#line 94 "parser.y"
                                            {
                 printf("[Error de Sintaxis] Línea %d: Definiste una constante pero omitiste el tipo de dato (ej: const int ...).\n", yylineno);
             }
-#line 1508 "y.tab.c"
-    break;
-
-  case 22: /* prefijo_declaracion: tipo  */
-#line 100 "parser.y"
-                                       { es_constante_actual = 0; }
 #line 1514 "y.tab.c"
     break;
 
-  case 23: /* prefijo_declaracion: CONST tipo  */
-#line 101 "parser.y"
-                                       { es_constante_actual = 1; }
+  case 22: /* prefijo_declaracion: tipo  */
+#line 106 "parser.y"
+                                       { es_constante_actual = 0; }
 #line 1520 "y.tab.c"
     break;
 
-  case 24: /* tipo: INT  */
-#line 104 "parser.y"
-              { tipo_actual = T_INT; }
+  case 23: /* prefijo_declaracion: CONST tipo  */
+#line 107 "parser.y"
+                                       { es_constante_actual = 1; }
 #line 1526 "y.tab.c"
     break;
 
-  case 25: /* tipo: FLOAT  */
-#line 105 "parser.y"
-             { tipo_actual = T_FLOAT; }
+  case 24: /* tipo: INT  */
+#line 110 "parser.y"
+              { tipo_actual = T_INT; }
 #line 1532 "y.tab.c"
     break;
 
-  case 26: /* tipo: CHAR  */
-#line 106 "parser.y"
-             { tipo_actual = T_CHAR; }
+  case 25: /* tipo: FLOAT  */
+#line 111 "parser.y"
+             { tipo_actual = T_FLOAT; }
 #line 1538 "y.tab.c"
     break;
 
-  case 27: /* tipo: DOUBLE  */
-#line 107 "parser.y"
-             { tipo_actual = T_DOUBLE; }
+  case 26: /* tipo: CHAR  */
+#line 112 "parser.y"
+             { tipo_actual = T_CHAR; }
 #line 1544 "y.tab.c"
     break;
 
+  case 27: /* tipo: DOUBLE  */
+#line 113 "parser.y"
+             { tipo_actual = T_DOUBLE; }
+#line 1550 "y.tab.c"
+    break;
+
   case 28: /* declarar_lista_ids: ID  */
-#line 110 "parser.y"
+#line 116 "parser.y"
                         {
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[0].nombre));
                 if (entrada == NULL){
@@ -1561,11 +1567,11 @@ yyreduce:
                 }
                 free((yyvsp[0].nombre));
          }
-#line 1565 "y.tab.c"
+#line 1571 "y.tab.c"
     break;
 
   case 29: /* declarar_lista_ids: declarar_lista_ids ',' ID  */
-#line 126 "parser.y"
+#line 132 "parser.y"
                                      {
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[0].nombre));
                 if (entrada == NULL){
@@ -1582,11 +1588,11 @@ yyreduce:
                 }
                 free((yyvsp[0].nombre));
          }
-#line 1586 "y.tab.c"
+#line 1592 "y.tab.c"
     break;
 
   case 30: /* declarar_lista_ids: ID '=' expresion  */
-#line 142 "parser.y"
+#line 148 "parser.y"
                             {
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[-2].nombre));
                 if (entrada == NULL){
@@ -1600,15 +1606,15 @@ yyreduce:
                     
                     // --- GENERACIÓN DE CÓDIGO PYTHON ---
                     imprimir_indentacion(); // <-- Indentamos
-                    fprintf(yyout_py, "%s_%d = %s\n", (yyvsp[-2].nombre), entorno_actual->id_entorno, (yyvsp[0].nombre));
+                    fprintf(yyout_py, "%s_%d = %s\n", (yyvsp[-2].nombre), entorno_actual->id_entorno, (yyvsp[0].info_expr)->codigo);
                 }
                 free((yyvsp[-2].nombre));
          }
-#line 1608 "y.tab.c"
+#line 1614 "y.tab.c"
     break;
 
   case 31: /* declarar_lista_ids: declarar_lista_ids ',' ID '=' expresion  */
-#line 159 "parser.y"
+#line 165 "parser.y"
                                                    {
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[-2].nombre));
                 if (entrada == NULL){
@@ -1622,30 +1628,30 @@ yyreduce:
                     
                     
                     imprimir_indentacion(); // Indentamos
-                    fprintf(yyout_py, "%s_%d = %s\n", (yyvsp[-2].nombre), entorno_actual->id_entorno, (yyvsp[0].nombre));
+                    fprintf(yyout_py, "%s_%d = %s\n", (yyvsp[-2].nombre), entorno_actual->id_entorno, (yyvsp[0].info_expr)->codigo);
                 }
                 free((yyvsp[-2].nombre));
          }
-#line 1630 "y.tab.c"
+#line 1636 "y.tab.c"
     break;
 
   case 34: /* asignacion_unitaria: ID '=' expresion  */
-#line 182 "parser.y"
+#line 188 "parser.y"
                                        {
                         struct entrada_tabla *entrada = buscar_variable((yyvsp[-2].nombre));
                         if (entrada == NULL){
                             printf("Error semántico: la variable '%s' no existe.\n", (yyvsp[-2].nombre));
                         } else {
                             imprimir_indentacion();
-                            fprintf(yyout_py, "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, (yyvsp[0].nombre));
+                            fprintf(yyout_py, "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, (yyvsp[0].info_expr)->codigo);
                         }
-                        free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                        free((yyvsp[-2].nombre)); free((yyvsp[0].info_expr));
                     }
-#line 1645 "y.tab.c"
+#line 1651 "y.tab.c"
     break;
 
   case 35: /* asignacion_unitaria: ID '+' '+'  */
-#line 192 "parser.y"
+#line 198 "parser.y"
                                {
                         struct entrada_tabla *entrada = buscar_variable((yyvsp[-2].nombre));
                         if (entrada == NULL){
@@ -1656,11 +1662,11 @@ yyreduce:
                         }
                         free((yyvsp[-2].nombre));
                     }
-#line 1660 "y.tab.c"
+#line 1666 "y.tab.c"
     break;
 
   case 36: /* asignacion_unitaria: ID '-' '-'  */
-#line 202 "parser.y"
+#line 208 "parser.y"
                                {
                         struct entrada_tabla *entrada = buscar_variable((yyvsp[-2].nombre));
                         if (entrada == NULL){
@@ -1671,11 +1677,11 @@ yyreduce:
                         }
                         free((yyvsp[-2].nombre));
                     }
-#line 1675 "y.tab.c"
+#line 1681 "y.tab.c"
     break;
 
   case 37: /* asignacion_unitaria: '+' '+' ID  */
-#line 212 "parser.y"
+#line 218 "parser.y"
                                {
                         struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
                         if (entrada == NULL){
@@ -1686,11 +1692,11 @@ yyreduce:
                         }
                         free((yyvsp[0].nombre));
                     }
-#line 1690 "y.tab.c"
+#line 1696 "y.tab.c"
     break;
 
   case 38: /* asignacion_unitaria: '-' '-' ID  */
-#line 222 "parser.y"
+#line 228 "parser.y"
                                {
                         struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
                         if (entrada == NULL){
@@ -1701,11 +1707,11 @@ yyreduce:
                         }
                         free((yyvsp[0].nombre));
                     }
-#line 1705 "y.tab.c"
+#line 1711 "y.tab.c"
     break;
 
   case 39: /* asignacion_unitaria: ID  */
-#line 232 "parser.y"
+#line 238 "parser.y"
                          {
                         struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
                         if (entrada == NULL){
@@ -1716,11 +1722,11 @@ yyreduce:
                         }
                         free((yyvsp[0].nombre));
                     }
-#line 1720 "y.tab.c"
+#line 1726 "y.tab.c"
     break;
 
   case 40: /* $@2: %empty  */
-#line 244 "parser.y"
+#line 250 "parser.y"
            {
             struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
             nuevo->tabla_simbolos = NULL; nuevo->cantidad_simbolos = 0; nuevo->capacidad_tabla = 0;
@@ -1728,11 +1734,11 @@ yyreduce:
             nuevo->id_entorno = contador_entornos++;
             entorno_actual = nuevo;   
 }
-#line 1732 "y.tab.c"
+#line 1738 "y.tab.c"
     break;
 
   case 41: /* loop: FOR $@2 '(' for_init condicion_loop ';' loop_consecuencia ')' '{' instrucciones '}'  */
-#line 250 "parser.y"
+#line 256 "parser.y"
                                                                          {
             if ((yyvsp[-4].nombre) && strlen((yyvsp[-4].nombre)) > 0) {
                 imprimir_indentacion();
@@ -1747,97 +1753,97 @@ yyreduce:
             entorno_actual = entorno_actual->padre;
             free(viejo);
     }
-#line 1751 "y.tab.c"
+#line 1757 "y.tab.c"
     break;
 
   case 42: /* loop: WHILE '(' condicion_loop ')' '{' instrucciones '}'  */
-#line 264 "parser.y"
+#line 270 "parser.y"
                                                         {    
         nivel_indentacion--;
     }
-#line 1759 "y.tab.c"
+#line 1765 "y.tab.c"
     break;
 
   case 43: /* condicion_loop: expresion '=' expresion  */
-#line 270 "parser.y"
+#line 276 "parser.y"
                                          {
                     imprimir_indentacion();
                     printf("Error: aunque C acepte la forma loop('expresion = expresion'), python no lo hace, por favor, correjir la línea %d.\n", yylineno);
-                    fprintf(yyout_py, "while %s = %s:\n", (yyvsp[-2].nombre), (yyvsp[0].nombre));
+                    fprintf(yyout_py, "while %s = %s:\n", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
                     nivel_indentacion++;
-                    free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                    free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr));
             }
-#line 1771 "y.tab.c"
+#line 1777 "y.tab.c"
     break;
 
   case 44: /* condicion_loop: expresion '>' expresion  */
-#line 277 "parser.y"
-                                         {
-                    imprimir_indentacion();
-                    fprintf(yyout_py, "while %s > %s:\n", (yyvsp[-2].nombre), (yyvsp[0].nombre));
-                    nivel_indentacion++;
-                    free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
-            }
-#line 1782 "y.tab.c"
-    break;
-
-  case 45: /* condicion_loop: expresion '<' expresion  */
 #line 283 "parser.y"
                                          {
                     imprimir_indentacion();
-                    fprintf(yyout_py, "while %s < %s:\n", (yyvsp[-2].nombre), (yyvsp[0].nombre));
+                    fprintf(yyout_py, "while %s > %s:\n", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
                     nivel_indentacion++;
-                    free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                    free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr));
             }
-#line 1793 "y.tab.c"
+#line 1788 "y.tab.c"
+    break;
+
+  case 45: /* condicion_loop: expresion '<' expresion  */
+#line 289 "parser.y"
+                                         {
+                    imprimir_indentacion();
+                    fprintf(yyout_py, "while %s < %s:\n", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
+                    nivel_indentacion++;
+                    free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr));
+            }
+#line 1799 "y.tab.c"
     break;
 
   case 46: /* condicion_loop: expresion MAYOR_IGUAL expresion  */
-#line 289 "parser.y"
+#line 295 "parser.y"
                                                  {
                     imprimir_indentacion();
-                    fprintf(yyout_py, "while %s >= %s:\n", (yyvsp[-2].nombre), (yyvsp[0].nombre));
+                    fprintf(yyout_py, "while %s >= %s:\n", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
                     nivel_indentacion++;
-                    free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                    free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
             }
-#line 1804 "y.tab.c"
+#line 1810 "y.tab.c"
     break;
 
   case 47: /* condicion_loop: expresion MENOR_IGUAL expresion  */
-#line 295 "parser.y"
+#line 301 "parser.y"
                                                  { // NUMERO '<=' ID
                     imprimir_indentacion();
-                    fprintf(yyout_py, "while %s <= %s:\n", (yyvsp[-2].nombre), (yyvsp[0].nombre));
+                    fprintf(yyout_py, "while %s <= %s:\n", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
                     nivel_indentacion++;
-                    free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                    free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
             }
-#line 1815 "y.tab.c"
+#line 1821 "y.tab.c"
     break;
 
   case 48: /* condicion_loop: expresion IGUAL_IGUAL expresion  */
-#line 301 "parser.y"
+#line 307 "parser.y"
                                                  {
                     imprimir_indentacion();
-                    fprintf(yyout_py, "while %s == %s:\n", (yyvsp[-2].nombre), (yyvsp[0].nombre));
+                    fprintf(yyout_py, "while %s == %s:\n", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
                     nivel_indentacion++;
-                    free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                    free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
             }
-#line 1826 "y.tab.c"
+#line 1832 "y.tab.c"
     break;
 
   case 49: /* condicion_loop: expresion  */
-#line 307 "parser.y"
+#line 313 "parser.y"
                         {
                     imprimir_indentacion();
-                    fprintf(yyout_py, "while %s:\n", (yyvsp[0].nombre));
+                    fprintf(yyout_py, "while %s:\n", (yyvsp[0].info_expr)->codigo);
                     nivel_indentacion++;
-                    free((yyvsp[0].nombre));
+                    free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
             }
-#line 1837 "y.tab.c"
+#line 1843 "y.tab.c"
     break;
 
   case 50: /* loop_consecuencia: ID  */
-#line 315 "parser.y"
+#line 321 "parser.y"
                       {
                     struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
                 if (entrada == NULL){
@@ -1847,11 +1853,11 @@ yyreduce:
                     (yyval.nombre) = strdup("");
                 }
             }
-#line 1851 "y.tab.c"
+#line 1857 "y.tab.c"
     break;
 
   case 51: /* loop_consecuencia: ID '+' '+'  */
-#line 324 "parser.y"
+#line 330 "parser.y"
                            {
                     struct entrada_tabla *entrada = buscar_variable((yyvsp[-2].nombre));
                 if (entrada == NULL){
@@ -1863,11 +1869,11 @@ yyreduce:
                     (yyval.nombre) = strdup(buf);
                 }
                 }
-#line 1867 "y.tab.c"
+#line 1873 "y.tab.c"
     break;
 
   case 52: /* loop_consecuencia: '-' '-' ID  */
-#line 335 "parser.y"
+#line 341 "parser.y"
                             {
                         struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
                 if (entrada == NULL){
@@ -1879,11 +1885,11 @@ yyreduce:
                     (yyval.nombre) = strdup(buf);
                 }
                 }
-#line 1883 "y.tab.c"
+#line 1889 "y.tab.c"
     break;
 
   case 53: /* loop_consecuencia: ID '=' expresion  */
-#line 346 "parser.y"
+#line 352 "parser.y"
                                    {
                     struct entrada_tabla *entrada = buscar_variable((yyvsp[-2].nombre));
                     if (entrada == NULL){
@@ -1891,315 +1897,351 @@ yyreduce:
                         (yyval.nombre) = strdup("");
                     } else {
                         char buf[512];
-                        snprintf(buf, sizeof(buf), "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, (yyvsp[0].nombre));
+                        snprintf(buf, sizeof(buf), "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, (yyvsp[0].info_expr)->codigo);
                         (yyval.nombre) = strdup(buf);
                     }
-                    free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                    free((yyvsp[-2].nombre)); free((yyvsp[0].info_expr));
                 }
-#line 1900 "y.tab.c"
+#line 1906 "y.tab.c"
     break;
 
   case 54: /* expresion: ID  */
-#line 360 "parser.y"
+#line 366 "parser.y"
                {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
                 struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
                 if (entrada == NULL) {
                     printf("Error semántico: '%s' no declarada.\n", (yyvsp[0].nombre));
-                    (yyval.nombre) = strdup((yyvsp[0].nombre)); 
+                    (yyval.info_expr)->codigo = strdup((yyvsp[0].nombre)); 
+                    (yyval.info_expr)->tipo_dato = T_INT; // Asumimos INT por defecto si hay error
                 } else {
                     // Si existe, generamos su nombre real de Python con su entorno: ej "i_1"
                     char buf[100];
                     sprintf(buf, "%s_%d", entrada->nombre, entrada->id_entorno_declarado);
-                    (yyval.nombre) = strdup(buf);
+                    (yyval.info_expr)->codigo = strdup(buf);
+                    (yyval.info_expr)->tipo_dato = entrada->tipo_base;
                 }
                 free((yyvsp[0].nombre));
           }
-#line 1918 "y.tab.c"
+#line 1927 "y.tab.c"
     break;
 
   case 55: /* expresion: NUMERO  */
-#line 373 "parser.y"
+#line 382 "parser.y"
                    {
+            (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
                 char buf[50];
                 sprintf(buf, "%g", (yyvsp[0].val_num));
-                (yyval.nombre) = strdup(buf);
-          }
-#line 1928 "y.tab.c"
-    break;
-
-  case 56: /* expresion: expresion '+' expresion  */
-#line 378 "parser.y"
-                                    {
-                char buf[256];
-                sprintf(buf, "%s + %s", (yyvsp[-2].nombre), (yyvsp[0].nombre));
-                (yyval.nombre) = strdup(buf);
-                free((yyvsp[-2].nombre)); free((yyvsp[0].nombre)); // Limpiamos memoria de los hijos
+                (yyval.info_expr)->codigo = strdup(buf);
+                (yyval.info_expr)->tipo_dato = T_INT; // <-- ¡Faltaba esto!
           }
 #line 1939 "y.tab.c"
     break;
 
-  case 57: /* expresion: expresion '-' expresion  */
-#line 384 "parser.y"
+  case 56: /* expresion: expresion '+' expresion  */
+#line 389 "parser.y"
                                     {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
                 char buf[256];
-                sprintf(buf, "%s - %s", (yyvsp[-2].nombre), (yyvsp[0].nombre));
-                (yyval.nombre) = strdup(buf);
-                free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                sprintf(buf, "%s + %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
+                (yyval.info_expr)->codigo = strdup(buf);
+                if ((yyvsp[-2].info_expr)->tipo_dato != (yyvsp[0].info_expr)->tipo_dato) {
+                        printf("[Error Semántico] Línea %d: Tipos incompatibles en la suma.\n", yylineno);
+                }
+                // 3. Heredamos el tipo (Asumimos que si llegamos acá el resultado es del mismo tipo)
+                (yyval.info_expr)->tipo_dato = (yyvsp[-2].info_expr)->tipo_dato; // <-- ¡Faltaba esto!
+                
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr));
+                free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
           }
-#line 1950 "y.tab.c"
+#line 1958 "y.tab.c"
+    break;
+
+  case 57: /* expresion: expresion '-' expresion  */
+#line 403 "parser.y"
+                                    {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
+                char buf[256];
+                sprintf(buf, "%s - %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
+                (yyval.info_expr)->codigo = strdup(buf);
+                
+                if ((yyvsp[-2].info_expr)->tipo_dato != (yyvsp[0].info_expr)->tipo_dato) {
+                    printf("[Error Semántico] Línea %d: Tipos incompatibles en la resta.\n", yylineno);
+                }
+                
+                (yyval.info_expr)->tipo_dato = (yyvsp[-2].info_expr)->tipo_dato;
+                
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr));
+                free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+          }
+#line 1978 "y.tab.c"
     break;
 
   case 58: /* expresion: expresion '*' expresion  */
-#line 390 "parser.y"
+#line 418 "parser.y"
                                     {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
                 char buf[256];
-                sprintf(buf, "%s * %s", (yyvsp[-2].nombre), (yyvsp[0].nombre));
-                (yyval.nombre) = strdup(buf);
-                free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                sprintf(buf, "%s * %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
+                (yyval.info_expr)->codigo = strdup(buf);
+                
+                if ((yyvsp[-2].info_expr)->tipo_dato != (yyvsp[0].info_expr)->tipo_dato) {
+                    printf("[Error Semántico] Línea %d: Tipos incompatibles en la multiplicación.\n", yylineno);
+                }
+                
+                (yyval.info_expr)->tipo_dato = (yyvsp[-2].info_expr)->tipo_dato;
+                
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr));
+                free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
           }
-#line 1961 "y.tab.c"
+#line 1998 "y.tab.c"
     break;
 
   case 59: /* expresion: '(' expresion ')'  */
-#line 396 "parser.y"
+#line 433 "parser.y"
                               {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
                 char buf[256];
-                sprintf(buf, "(%s)", (yyvsp[-1].nombre));
-                (yyval.nombre) = strdup(buf);
-                free((yyvsp[-1].nombre));
+                sprintf(buf, "(%s)", (yyvsp[-1].info_expr)->codigo);
+                (yyval.info_expr)->codigo = strdup(buf);
+                
+                // Los paréntesis no cambian el tipo, solo lo pasan hacia arriba
+                (yyval.info_expr)->tipo_dato = (yyvsp[-1].info_expr)->tipo_dato; 
+                
+                free((yyvsp[-1].info_expr)->codigo); free((yyvsp[-1].info_expr));
           }
-#line 1972 "y.tab.c"
+#line 2014 "y.tab.c"
     break;
 
   case 60: /* $@3: %empty  */
-#line 404 "parser.y"
+#line 446 "parser.y"
                           {
             imprimir_indentacion();
             fprintf(yyout_py, "if ");
         }
-#line 1981 "y.tab.c"
+#line 2023 "y.tab.c"
     break;
 
   case 61: /* $@4: %empty  */
-#line 407 "parser.y"
+#line 449 "parser.y"
                            {
             fprintf(yyout_py, ":\n");
             nivel_indentacion++;
         }
-#line 1990 "y.tab.c"
+#line 2032 "y.tab.c"
     break;
 
   case 62: /* $@5: %empty  */
-#line 410 "parser.y"
+#line 452 "parser.y"
                                 { 
             nivel_indentacion--;
         }
-#line 1998 "y.tab.c"
+#line 2040 "y.tab.c"
     break;
 
   case 64: /* $@6: %empty  */
-#line 413 "parser.y"
+#line 455 "parser.y"
                                    {
             
         }
-#line 2006 "y.tab.c"
+#line 2048 "y.tab.c"
     break;
 
   case 65: /* $@7: %empty  */
-#line 415 "parser.y"
+#line 457 "parser.y"
              {
             /*if($1 == float){
                 printf("Error, prohibida sintaxis para switch, la expresion debe ser entera, arreglar linea %d\n", yylineno);
              } TODO cambiar esto cuando ya tengamos un verificador de tipos*/ 
             imprimir_indentacion();
-            fprintf(yyout_py, "match %s:\n", (yyvsp[-3].nombre));
+            fprintf(yyout_py, "match %s:\n", (yyvsp[-3].info_expr)->codigo);
             nivel_indentacion++;
-            free((yyvsp[-3].nombre));
+            free((yyvsp[-3].info_expr));
         }
-#line 2020 "y.tab.c"
+#line 2062 "y.tab.c"
     break;
 
   case 66: /* condicionales: SWITCH '(' expresion ')' $@6 '{' $@7 switch_cases '}'  */
-#line 423 "parser.y"
+#line 465 "parser.y"
                            {
             nivel_indentacion--;
         }
-#line 2028 "y.tab.c"
+#line 2070 "y.tab.c"
     break;
 
   case 67: /* $@8: %empty  */
-#line 428 "parser.y"
+#line 470 "parser.y"
                              { 
                 // Traducimos el 'else if' de C al 'elif' de Python
                 imprimir_indentacion(); 
                 fprintf(yyout_py, "elif "); 
            }
-#line 2038 "y.tab.c"
+#line 2080 "y.tab.c"
     break;
 
   case 68: /* $@9: %empty  */
-#line 433 "parser.y"
+#line 475 "parser.y"
                             { 
                 fprintf(yyout_py, ":\n"); 
                 nivel_indentacion++;
            }
-#line 2047 "y.tab.c"
+#line 2089 "y.tab.c"
     break;
 
   case 69: /* $@10: %empty  */
-#line 437 "parser.y"
+#line 479 "parser.y"
                                  {
                 nivel_indentacion--;
            }
-#line 2055 "y.tab.c"
+#line 2097 "y.tab.c"
     break;
 
   case 71: /* $@11: %empty  */
-#line 441 "parser.y"
+#line 483 "parser.y"
                 { 
                 // El caso base de cierre: un 'else:' simple
                 imprimir_indentacion(); 
                 fprintf(yyout_py, "else:\n"); 
                 nivel_indentacion++;
            }
-#line 2066 "y.tab.c"
+#line 2108 "y.tab.c"
     break;
 
   case 72: /* bloque_else: ELSE $@11 '{' instrucciones '}'  */
-#line 447 "parser.y"
+#line 489 "parser.y"
                                  {
                 nivel_indentacion--;
            }
-#line 2074 "y.tab.c"
+#line 2116 "y.tab.c"
     break;
 
   case 74: /* $@12: %empty  */
-#line 454 "parser.y"
+#line 496 "parser.y"
                                     {
-                    if (strchr((yyvsp[-1].nombre), '_') != NULL) {
-                        printf("[Error Semántico] Línea %d: El valor del 'case' debe ser una constante, no una variable ('%s').\n", yylineno, (yyvsp[-1].nombre));
+                    if (strchr((yyvsp[-1].info_expr)->codigo, '_') != NULL) {
+                        printf("[Error Semántico] Línea %d: El valor del 'case' debe ser una constante, no una variable ('%s').\n", yylineno, (yyvsp[-1].info_expr)->codigo);
                     } //si expresion trae un _ en su nombre, significa que es una variable, algo prohbido en c
                     imprimir_indentacion();
-                    fprintf(yyout_py, "case %s:\n", (yyvsp[-1].nombre));
+                    fprintf(yyout_py, "case %s:\n", (yyvsp[-1].info_expr)->codigo);
                     nivel_indentacion++; //subimos la indentación para las instrucciones de este case específico
-                    free((yyvsp[-1].nombre));
+                    free((yyvsp[-1].info_expr));
     }
-#line 2088 "y.tab.c"
+#line 2130 "y.tab.c"
     break;
 
   case 75: /* $@13: %empty  */
-#line 462 "parser.y"
+#line 504 "parser.y"
                               {
         nivel_indentacion--;
     }
-#line 2096 "y.tab.c"
+#line 2138 "y.tab.c"
     break;
 
   case 77: /* $@14: %empty  */
-#line 465 "parser.y"
+#line 507 "parser.y"
                               {
                     // Opcional: Agregamos soporte para el 'default:' de C -> 'case _:' de Python
                     imprimir_indentacion();
                     fprintf(yyout_py, "case _:\n");
                     nivel_indentacion++;
               }
-#line 2107 "y.tab.c"
+#line 2149 "y.tab.c"
     break;
 
   case 78: /* switch_cases: DEFAULT ':' $@14 instrucciones  */
-#line 471 "parser.y"
+#line 513 "parser.y"
                             {
                     nivel_indentacion--;
               }
-#line 2115 "y.tab.c"
+#line 2157 "y.tab.c"
     break;
 
   case 79: /* switch_cases: error switch_cases  */
-#line 474 "parser.y"
+#line 516 "parser.y"
                                      { 
                     // Si algo falla dentro de un case, Bison limpia la pila 
                     // hasta encontrar el inicio del Siguiente CASE o el cierre '}'
                     printf("[Error Sintáctico] Línea %d: 'case' mal formado o falta ';' tras el break.\n", yylineno);
                     yyerrok; // Indica a Bison que ya retomamos el control
               }
-#line 2126 "y.tab.c"
+#line 2168 "y.tab.c"
     break;
 
   case 81: /* condicion_IF: expresion '=' expresion  */
-#line 484 "parser.y"
+#line 526 "parser.y"
                                           {
                     printf("Error: aunque C acepte la forma condicional('expresion = expresion'), python no lo hace, por favor, corregir la línea %d.\n", yylineno);
-                    fprintf(yyout_py, "%s = %s", (yyvsp[-2].nombre), (yyvsp[0].nombre));
-                    free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                    fprintf(yyout_py, "%s = %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
+                    free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr));
             }
-#line 2136 "y.tab.c"
+#line 2178 "y.tab.c"
     break;
 
   case 82: /* condicion_IF: expresion '>' expresion  */
-#line 489 "parser.y"
+#line 531 "parser.y"
                                          {
-                    fprintf(yyout_py, "%s > %s", (yyvsp[-2].nombre), (yyvsp[0].nombre));
-                    free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                    fprintf(yyout_py, "%s > %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
+                    free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr));
             }
-#line 2145 "y.tab.c"
+#line 2187 "y.tab.c"
     break;
 
   case 83: /* condicion_IF: expresion '<' expresion  */
-#line 493 "parser.y"
+#line 535 "parser.y"
                                          {
-                    fprintf(yyout_py, "%s < %s", (yyvsp[-2].nombre), (yyvsp[0].nombre));
-                    free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                    fprintf(yyout_py, "%s < %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
+                    free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr));
             }
-#line 2154 "y.tab.c"
+#line 2196 "y.tab.c"
     break;
 
   case 84: /* condicion_IF: expresion MAYOR_IGUAL expresion  */
-#line 497 "parser.y"
+#line 539 "parser.y"
                                                  {
-                    fprintf(yyout_py, "%s >= %s", (yyvsp[-2].nombre), (yyvsp[0].nombre));
-                    free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                    fprintf(yyout_py, "%s >= %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
+                    free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
             }
-#line 2163 "y.tab.c"
+#line 2205 "y.tab.c"
     break;
 
   case 85: /* condicion_IF: expresion MENOR_IGUAL expresion  */
-#line 501 "parser.y"
+#line 543 "parser.y"
                                                  { // NUMERO '<=' ID
-                    fprintf(yyout_py, "%s <= %s", (yyvsp[-2].nombre), (yyvsp[0].nombre));
-                    free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                    fprintf(yyout_py, "%s <= %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
+                    free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
             }
-#line 2172 "y.tab.c"
+#line 2214 "y.tab.c"
     break;
 
   case 86: /* condicion_IF: expresion IGUAL_IGUAL expresion  */
-#line 505 "parser.y"
+#line 547 "parser.y"
                                                  {
-                    fprintf(yyout_py, "%s == %s", (yyvsp[-2].nombre), (yyvsp[0].nombre));
-                    free((yyvsp[-2].nombre)); free((yyvsp[0].nombre));
+                    fprintf(yyout_py, "%s == %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
+                    free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
             }
-#line 2181 "y.tab.c"
+#line 2223 "y.tab.c"
     break;
 
   case 87: /* condicion_IF: expresion  */
-#line 509 "parser.y"
+#line 551 "parser.y"
                         {
-                    fprintf(yyout_py, "%s", (yyvsp[0].nombre));
-                    free((yyvsp[0].nombre));
+                    fprintf(yyout_py, "%s", (yyvsp[0].info_expr)->codigo);
+                    free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
             }
-#line 2190 "y.tab.c"
+#line 2232 "y.tab.c"
     break;
 
   case 91: /* $@15: %empty  */
-#line 520 "parser.y"
+#line 562 "parser.y"
                                         { 
                         // TRUCO: Imprimimos la coma y un espacio justo cuando Bison detecta el token ','
                         fprintf(yyout_py, ", "); 
                    }
-#line 2199 "y.tab.c"
+#line 2241 "y.tab.c"
     break;
 
   case 93: /* parametro_void: tipo ID  */
-#line 527 "parser.y"
+#line 569 "parser.y"
                          { //realmente es malo este nombre parametro_void, porque las funciones que no son void tambien usan esta gramatica, pero no se me ocurre un nombre bueno y que no sea largo, y tampoco importa tanto
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[0].nombre));
                 if (entrada == NULL){
@@ -2215,11 +2257,11 @@ yyreduce:
                 }
                 free((yyvsp[0].nombre));
           }
-#line 2219 "y.tab.c"
+#line 2261 "y.tab.c"
     break;
 
   case 94: /* $@16: %empty  */
-#line 544 "parser.y"
+#line 586 "parser.y"
                                       {
                 struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
                 nuevo->tabla_simbolos = NULL;
@@ -2232,31 +2274,31 @@ yyreduce:
                 fprintf(yyout_py, "def %s(", (yyvsp[-1].nombre));
                 free((yyvsp[-1].nombre));
             }
-#line 2236 "y.tab.c"
+#line 2278 "y.tab.c"
     break;
 
   case 95: /* $@17: %empty  */
-#line 555 "parser.y"
+#line 597 "parser.y"
                                                 {
                 fprintf(yyout_py, "):\n");
                 nivel_indentacion++;
             }
-#line 2245 "y.tab.c"
+#line 2287 "y.tab.c"
     break;
 
   case 96: /* funcion_void: VOID ID '(' $@16 declaracion_variables_funcion ')' $@17 '{' instrucciones '}'  */
-#line 558 "parser.y"
+#line 600 "parser.y"
                                     {
                 nivel_indentacion--;
                 struct Entorno *viejo = entorno_actual;
                 entorno_actual = entorno_actual->padre;
                 free(viejo);
             }
-#line 2256 "y.tab.c"
+#line 2298 "y.tab.c"
     break;
 
   case 97: /* $@18: %empty  */
-#line 565 "parser.y"
+#line 607 "parser.y"
                                                         { //estaba 'tipo' en vez de prefijo_declaracion, quilombo era
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[-1].nombre));
                 if (entrada == NULL){
@@ -2278,31 +2320,31 @@ yyreduce:
                 fprintf(yyout_py, "def %s(", (yyvsp[-1].nombre));
                 free((yyvsp[-1].nombre));
             }
-#line 2282 "y.tab.c"
+#line 2324 "y.tab.c"
     break;
 
   case 98: /* $@19: %empty  */
-#line 585 "parser.y"
+#line 627 "parser.y"
                                                 {
                 fprintf(yyout_py, "):\n");
                 nivel_indentacion++;
             }
-#line 2291 "y.tab.c"
+#line 2333 "y.tab.c"
     break;
 
   case 99: /* funcion_NO_void: prefijo_declaracion ID '(' $@18 declaracion_variables_funcion ')' $@19 '{' instrucciones RETURN expresion ';' '}'  */
-#line 588 "parser.y"
+#line 630 "parser.y"
                                                          { //debilidad, no puede haber más de 1 return, y encima el bloque de la funcion debe terminar sí o sí con un return
                 nivel_indentacion--;
                 struct Entorno *viejo = entorno_actual;
                 entorno_actual = entorno_actual->padre;
                 free(viejo);
             }
-#line 2302 "y.tab.c"
+#line 2344 "y.tab.c"
     break;
 
   case 100: /* $@20: %empty  */
-#line 598 "parser.y"
+#line 640 "parser.y"
                                    {
                 struct entrada_tabla *entrada = buscar_variable((yyvsp[-1].nombre));
                         if (entrada == NULL){
@@ -2312,37 +2354,37 @@ yyreduce:
                 fprintf(yyout_py, "%s(", (yyvsp[-1].nombre));
                 free((yyvsp[-1].nombre));
             }
-#line 2316 "y.tab.c"
+#line 2358 "y.tab.c"
     break;
 
   case 101: /* $@21: %empty  */
-#line 606 "parser.y"
+#line 648 "parser.y"
                                          {
                 fprintf(yyout_py, ")\n");
             }
-#line 2324 "y.tab.c"
+#line 2366 "y.tab.c"
     break;
 
   case 106: /* $@22: %empty  */
-#line 616 "parser.y"
+#line 658 "parser.y"
                                                        { 
                         // TRUCO: Imprimimos la coma y un espacio justo cuando Bison detecta el token ','
                         fprintf(yyout_py, ", "); 
                    }
-#line 2333 "y.tab.c"
+#line 2375 "y.tab.c"
     break;
 
   case 108: /* parametro_llamar_funcion: expresion  */
-#line 623 "parser.y"
+#line 665 "parser.y"
                                          { 
-        fprintf(yyout_py, "%s", (yyvsp[0].nombre)); 
-        free((yyvsp[0].nombre)); 
+        fprintf(yyout_py, "%s", (yyvsp[0].info_expr)->codigo); 
+        free((yyvsp[0].info_expr)->codigo); 
     }
-#line 2342 "y.tab.c"
+#line 2384 "y.tab.c"
     break;
 
   case 113: /* arrays: prefijo_declaracion ID '[' volumen_array ']' dimension_array asignacion_array ';'  */
-#line 637 "parser.y"
+#line 679 "parser.y"
                                                                                               {
         struct entrada_tabla *entrada = declarar_variable((yyvsp[-6].nombre));
                 if (entrada == NULL){
@@ -2363,49 +2405,48 @@ yyreduce:
                 }
                 free((yyvsp[-6].nombre));
     }
-#line 2367 "y.tab.c"
+#line 2409 "y.tab.c"
     break;
 
   case 114: /* asignacion_array: '=' inicializador_array  */
-#line 659 "parser.y"
+#line 701 "parser.y"
                                               {
                         (yyval.nombre) = strdup((yyvsp[0].nombre));
                         free((yyvsp[0].nombre));
                     }
-#line 2376 "y.tab.c"
+#line 2418 "y.tab.c"
     break;
 
   case 115: /* asignacion_array: %empty  */
-#line 663 "parser.y"
+#line 705 "parser.y"
                                    {
                         (yyval.nombre) = NULL;
                     }
-#line 2384 "y.tab.c"
+#line 2426 "y.tab.c"
     break;
 
   case 116: /* inicializador_array: '{' lista_inicializadores '}'  */
-#line 671 "parser.y"
+#line 713 "parser.y"
     {
-        // Acá ocurre la magia de la traducción:
         // En C entraron { y }, pero para Python armamos el string con [ y ]
         (yyval.nombre) = malloc(strlen((yyvsp[-1].nombre)) + 3);
         sprintf((yyval.nombre), "[%s]", (yyvsp[-1].nombre));
         free((yyvsp[-1].nombre));
     }
-#line 2396 "y.tab.c"
+#line 2437 "y.tab.c"
     break;
 
   case 117: /* lista_inicializadores: valor_o_anidado  */
-#line 683 "parser.y"
+#line 724 "parser.y"
     {
         (yyval.nombre) = strdup((yyvsp[0].nombre));
         free((yyvsp[0].nombre));
     }
-#line 2405 "y.tab.c"
+#line 2446 "y.tab.c"
     break;
 
   case 118: /* lista_inicializadores: lista_inicializadores ',' valor_o_anidado  */
-#line 688 "parser.y"
+#line 729 "parser.y"
     {
         // Concatenamos lo que ya teníamos con el nuevo valor
         (yyval.nombre) = malloc(strlen((yyvsp[-2].nombre)) + strlen((yyvsp[0].nombre)) + 3);
@@ -2413,30 +2454,30 @@ yyreduce:
         free((yyvsp[-2].nombre));
         free((yyvsp[0].nombre));
     }
-#line 2417 "y.tab.c"
+#line 2458 "y.tab.c"
     break;
 
   case 119: /* valor_o_anidado: expresion  */
-#line 701 "parser.y"
+#line 742 "parser.y"
     {
-        (yyval.nombre) = strdup((yyvsp[0].nombre));
-        free((yyvsp[0].nombre));
+        (yyval.nombre) = strdup((yyvsp[0].info_expr)->codigo);
+        free((yyvsp[0].info_expr));
     }
-#line 2426 "y.tab.c"
+#line 2467 "y.tab.c"
     break;
 
   case 120: /* valor_o_anidado: inicializador_array  */
-#line 706 "parser.y"
+#line 747 "parser.y"
     {
         (yyval.nombre) = strdup((yyvsp[0].nombre)); 
         free((yyvsp[0].nombre));
         // Ya viene con los corchetes [] armados desde inicializador_array
     }
-#line 2436 "y.tab.c"
+#line 2477 "y.tab.c"
     break;
 
 
-#line 2440 "y.tab.c"
+#line 2481 "y.tab.c"
 
       default: break;
     }
@@ -2629,7 +2670,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 713 "parser.y"
+#line 754 "parser.y"
 
 
 /* Inclusión rústica del analizador léxico al final del archivo */
