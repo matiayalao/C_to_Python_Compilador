@@ -64,11 +64,16 @@ extern int yydebug;
     CONST = 265,                   /* CONST  */
     DOUBLE = 266,                  /* DOUBLE  */
     FOR = 267,                     /* FOR  */
-    MAYOR_IGUAL = 268,             /* MAYOR_IGUAL  */
-    IGUAL_IGUAL = 269,             /* IGUAL_IGUAL  */
-    MENOR_IGUAL = 270,             /* MENOR_IGUAL  */
-    ID = 271,                      /* ID  */
-    NUMERO = 272                   /* NUMERO  */
+    SWITCH = 268,                  /* SWITCH  */
+    CASE = 269,                    /* CASE  */
+    VOID = 270,                    /* VOID  */
+    MAYOR_IGUAL = 271,             /* MAYOR_IGUAL  */
+    IGUAL_IGUAL = 272,             /* IGUAL_IGUAL  */
+    MENOR_IGUAL = 273,             /* MENOR_IGUAL  */
+    BREAK = 274,                   /* BREAK  */
+    DEFAULT = 275,                 /* DEFAULT  */
+    ID = 276,                      /* ID  */
+    NUMERO = 277                   /* NUMERO  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -87,22 +92,27 @@ extern int yydebug;
 #define CONST 265
 #define DOUBLE 266
 #define FOR 267
-#define MAYOR_IGUAL 268
-#define IGUAL_IGUAL 269
-#define MENOR_IGUAL 270
-#define ID 271
-#define NUMERO 272
+#define SWITCH 268
+#define CASE 269
+#define VOID 270
+#define MAYOR_IGUAL 271
+#define IGUAL_IGUAL 272
+#define MENOR_IGUAL 273
+#define BREAK 274
+#define DEFAULT 275
+#define ID 276
+#define NUMERO 277
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 33 "parser.y"
+#line 31 "parser.y"
 
     char *nombre;     
     double val_num;   
 
-#line 106 "y.tab.h"
+#line 116 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

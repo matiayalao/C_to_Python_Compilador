@@ -35,6 +35,8 @@ numero  {digito}+(\.{digito}+)?
 
 "{"         { return('{'); }
 "}"         { return('}'); }
+"["         { return('['); }
+"]"         { return(']'); }
 "*"         { return('*'); }
 "="         { return('='); }
 "=="        { return(IGUAL_IGUAL); }                                 

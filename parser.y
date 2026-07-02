@@ -13,8 +13,6 @@ int tipo_actual = 0;
 int es_constante_actual = 0;
 
 
-
-
 extern int yylineno; //contador de lineas
 
 extern FILE *yyin; // Variable que usa Lex para leer la entrada         
@@ -25,6 +23,8 @@ void imprimir_indentacion() {
         fprintf(yyout_py, "    "); // Imprime 4 espacios por nivel
     }
 }
+
+
 
 %}
 
@@ -41,6 +41,7 @@ para que tenga compartimentos de distintos tipos de datos.*/
 %token <nombre> ID
 %token <val_num> NUMERO 
 %type <nombre> loop_consecuencia
+%type <nombre> inicializador_array lista_inicializadores valor_o_anidado asignacion_array
 
 %left '+' '-'
 %left '*' '/'
@@ -82,6 +83,7 @@ instruccion : declaracion
            | funcion_void
            | funcion_NO_void
            | llamar_funcion
+           | arrays
            ;
 
 declaracion : prefijo_declaracion declarar_lista_ids ';' { es_constante_actual = 0; }
@@ -618,12 +620,96 @@ lista_parametros_llamar_funcion : parametro_llamar_funcion
                         fprintf(yyout_py, ", "); 
                    } 
                    parametro_llamar_funcion
-                 ;
+    ;
 
     parametro_llamar_funcion : expresion { 
         fprintf(yyout_py, "%s", $1); 
         free($1); 
     }
+    ;
+
+    volumen_array: NUMERO
+                    |
+    ;
+    
+    dimension_array: '[' volumen_array ']' dimension_array
+                    | 
+    ;
+
+    arrays: prefijo_declaracion ID '[' volumen_array ']' dimension_array asignacion_array ';' {
+        struct entrada_tabla *entrada = declarar_variable($2);
+                if (entrada == NULL){
+                    printf("Error semántico: la variable '%s' ya fue declarada.\n", $2);
+                } else {
+                    entrada->tipo_base = tipo_actual;
+                    entrada->id_entorno_declarado = entorno_actual->id_entorno;
+
+                    if(es_constante_actual == 1) entrada->es_constante = 1;
+                    
+                    imprimir_indentacion();
+                    if ($7 != NULL) {
+                        fprintf(yyout_py, "%s_%d = %s\n", $2, entorno_actual->id_entorno, $7);
+                        free($7);
+                    } else {
+                        fprintf(yyout_py, "%s_%d = []\n", $2, entorno_actual->id_entorno);
+                    }
+                }
+                free($2);
+    }
+    ;
+
+    asignacion_array: '=' inicializador_array {
+                        $$ = strdup($2);
+                        free($2);
+                    }
+                    | /* vacío */ {
+                        $$ = NULL;
+                    }
+                    ;
+
+    // 1. La regla base del inicializador que encierra todo entre llaves
+inicializador_array:
+    '{' lista_inicializadores '}'
+    {
+        // En C entraron { y }, pero para Python armamos el string con [ y ]
+        $$ = malloc(strlen($2) + 3);
+        sprintf($$, "[%s]", $2);
+        free($2);
+    }
+    ;
+
+// 2. Una lista de cosas separadas por comas (recursividad por la izquierda)
+lista_inicializadores:
+    valor_o_anidado
+    {
+        $$ = strdup($1);
+        free($1);
+    }
+    | lista_inicializadores ',' valor_o_anidado
+    {
+        // Concatenamos lo que ya teníamos con el nuevo valor
+        $$ = malloc(strlen($1) + strlen($3) + 3);
+        sprintf($$, "%s, %s", $1, $3);
+        free($1);
+        free($3);
+    }
+    ;
+
+// 3. LA REGLA CLAVE: Un elemento puede ser un simple número/expresión, 
+// o puede ser OTRO array anidado.
+valor_o_anidado:
+    expresion // Tu regla actual que maneja NUMERO, ID, operaciones, etc.
+    {
+        $$ = strdup($1);
+        free($1);
+    }
+    | inicializador_array
+    {
+        $$ = strdup($1); 
+        free($1);
+        // Ya viene con los corchetes [] armados desde inicializador_array
+    }
+    ;
 
 %%
 

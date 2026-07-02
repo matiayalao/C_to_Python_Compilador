@@ -7,7 +7,7 @@ void funcion(int a){
 
 int main(){
 	int x, y;
-
+	const int vector[4];
 	x;
 	printf("Los valores son: x= %d, y = %d.",x,y);
 	for(int i = 0; i < 10; i++){

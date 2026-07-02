@@ -28,4 +28,5 @@ def funcion(g_2, h_2):
 def tocha():
     while i_0 < 20:
         i_0 = 20
-tocha()
+tocha(x_0 + y_0)
+hola_0 = [[1, 2, 3, 4], [2, 2, 2]]
