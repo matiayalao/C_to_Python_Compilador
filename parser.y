@@ -78,20 +78,6 @@ struct InfoExpresion {
 programa: instrucciones
         ;
 
-bloque   : '{' {
-                struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
-                nuevo->tabla_simbolos = NULL;
-                nuevo->cantidad_simbolos = 0;
-                nuevo->capacidad_tabla = 0;
-                nuevo->padre = entorno_actual;
-                nuevo->id_entorno = contador_entornos++; 
-                entorno_actual = nuevo; 
-            } 
-        instrucciones '}' {
-                struct Entorno *viejo = entorno_actual;
-                entorno_actual = entorno_actual->padre;
-            }
-      ;
 
 instrucciones : instrucciones instruccion 
              | /* vacío (regla lambda) */

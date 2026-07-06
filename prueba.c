@@ -5,10 +5,23 @@
 	for(int i = 0, y = 20; i < 20; i++){
 		int z = 90;
 		int h = 3;
+
+		while(z){
+			int reto = h;
+		}
 	}
 
 
+	void holaaa(int xxx, int yyy){
+	       xxx = yyy;
+	}
 
+	void hola1(int xxx, int yyy){
+	}
+
+	int hola2(int xxx, int yyy){
+	}
+	int xxx = 20;
 	while(i){
 		int e = x + y;
 	}
@@ -17,10 +30,10 @@
 
 	if(i == 1){
 	   for(int x = 20; y < 20; y++){
-		t++;
+		
 	   }
 	}
-
+	
 	switch(x){
 		case 3:
 			i = 20;
@@ -31,7 +44,7 @@
 	}
 
 	if(i == 2){
-		i++;
+	
 	}
 
 void funcion(int g, float h){
@@ -43,7 +56,7 @@ void funcion(int g, float h){
 
 
 
-int tocha(){
+int tocha(int rt){
 
 
 	while(i < 20){
@@ -51,8 +64,8 @@ int tocha(){
 	}
 	return i + 20;
 }
-
-tocha();
+float rrrr;
+tocha(rrrr);
 
 
 const int hola[2][4] = { {1,2,3,4},{2,2,2}};
