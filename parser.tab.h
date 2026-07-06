@@ -70,10 +70,13 @@ extern int yydebug;
     MAYOR_IGUAL = 271,             /* MAYOR_IGUAL  */
     IGUAL_IGUAL = 272,             /* IGUAL_IGUAL  */
     MENOR_IGUAL = 273,             /* MENOR_IGUAL  */
-    BREAK = 274,                   /* BREAK  */
-    DEFAULT = 275,                 /* DEFAULT  */
-    ID = 276,                      /* ID  */
-    NUMERO = 277                   /* NUMERO  */
+    NO_IGUAL = 274,                /* NO_IGUAL  */
+    BREAK = 275,                   /* BREAK  */
+    DEFAULT = 276,                 /* DEFAULT  */
+    AND = 277,                     /* AND  */
+    OR = 278,                      /* OR  */
+    ID = 279,                      /* ID  */
+    NUMERO = 280                   /* NUMERO  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -82,12 +85,13 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 33 "parser.y"
+#line 49 "parser.y"
 
     char *nombre;     
     double val_num;   
+    struct InfoExpresion *info_expr;
 
-#line 91 "parser.tab.h"
+#line 95 "parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -6,11 +6,10 @@ floa_0 = 31.4
 ggg_0 = 3.1
 i_0 = 0
 y_0 = 20
-while i_0:
+while i_0 < 20:
     z_0 = 90
     h_0 = 3
     i_0 += 1
-suma_0 = floa_0 * z
 while i_0:
     e_0 = x_0 + y_0
 i_0 = 1
@@ -31,5 +30,6 @@ def funcion(g_2, h_2):
 def tocha():
     while i_0 < 20:
         i_0 = 20
-tocha(x_0 + y_0)
+    return i_0 + 20
+tocha()
 hola_0 = [[1, 2, 3, 4], [2, 2, 2]]

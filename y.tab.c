@@ -81,6 +81,13 @@ int yylex(void);
 
 int tipo_actual = 0;
 int es_constante_actual = 0;
+int contador_parametros = 0;
+
+#define MAX_PARAMS 32
+// Buffer que se llena mientras se parsea la DECLARACIÓN de una función
+int tipos_params_actuales[MAX_PARAMS];
+// Buffer que se llena mientras se parsea la LLAMADA a una función
+int tipos_args_actuales[MAX_PARAMS];
 
 
 extern int yylineno; //contador de lineas
@@ -94,13 +101,21 @@ void imprimir_indentacion() {
     }
 }
 
+int max_tipo(int t1, int t2) {
+    if ((t1 == T_INT || t1 == T_FLOAT || t1 == T_DOUBLE) &&
+        (t2 == T_INT || t2 == T_FLOAT || t2 == T_DOUBLE)) {
+        return (t1 > t2) ? t1 : t2;
+    }
+    return t1;
+}
+
 struct InfoExpresion {
         char *codigo;
         int tipo_dato; 
     };
 
 
-#line 104 "y.tab.c"
+#line 119 "y.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -157,10 +172,13 @@ extern int yydebug;
     MAYOR_IGUAL = 271,             /* MAYOR_IGUAL  */
     IGUAL_IGUAL = 272,             /* IGUAL_IGUAL  */
     MENOR_IGUAL = 273,             /* MENOR_IGUAL  */
-    BREAK = 274,                   /* BREAK  */
-    DEFAULT = 275,                 /* DEFAULT  */
-    ID = 276,                      /* ID  */
-    NUMERO = 277                   /* NUMERO  */
+    NO_IGUAL = 274,                /* NO_IGUAL  */
+    BREAK = 275,                   /* BREAK  */
+    DEFAULT = 276,                 /* DEFAULT  */
+    AND = 277,                     /* AND  */
+    OR = 278,                      /* OR  */
+    ID = 279,                      /* ID  */
+    NUMERO = 280                   /* NUMERO  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -185,22 +203,25 @@ extern int yydebug;
 #define MAYOR_IGUAL 271
 #define IGUAL_IGUAL 272
 #define MENOR_IGUAL 273
-#define BREAK 274
-#define DEFAULT 275
-#define ID 276
-#define NUMERO 277
+#define NO_IGUAL 274
+#define BREAK 275
+#define DEFAULT 276
+#define AND 277
+#define OR 278
+#define ID 279
+#define NUMERO 280
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 36 "parser.y"
+#line 49 "parser.y"
 
     char *nombre;     
     double val_num;   
     struct InfoExpresion *info_expr;
 
-#line 204 "y.tab.c"
+#line 225 "y.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -239,85 +260,92 @@ enum yysymbol_kind_t
   YYSYMBOL_MAYOR_IGUAL = 16,               /* MAYOR_IGUAL  */
   YYSYMBOL_IGUAL_IGUAL = 17,               /* IGUAL_IGUAL  */
   YYSYMBOL_MENOR_IGUAL = 18,               /* MENOR_IGUAL  */
-  YYSYMBOL_BREAK = 19,                     /* BREAK  */
-  YYSYMBOL_DEFAULT = 20,                   /* DEFAULT  */
-  YYSYMBOL_ID = 21,                        /* ID  */
-  YYSYMBOL_NUMERO = 22,                    /* NUMERO  */
-  YYSYMBOL_23_ = 23,                       /* '+'  */
-  YYSYMBOL_24_ = 24,                       /* '-'  */
-  YYSYMBOL_25_ = 25,                       /* '*'  */
-  YYSYMBOL_26_ = 26,                       /* '/'  */
-  YYSYMBOL_27_ = 27,                       /* '{'  */
-  YYSYMBOL_28_ = 28,                       /* '}'  */
-  YYSYMBOL_29_ = 29,                       /* ';'  */
-  YYSYMBOL_30_ = 30,                       /* ','  */
-  YYSYMBOL_31_ = 31,                       /* '='  */
-  YYSYMBOL_32_ = 32,                       /* '('  */
-  YYSYMBOL_33_ = 33,                       /* ')'  */
-  YYSYMBOL_34_ = 34,                       /* '>'  */
-  YYSYMBOL_35_ = 35,                       /* '<'  */
-  YYSYMBOL_36_ = 36,                       /* ':'  */
-  YYSYMBOL_37_ = 37,                       /* '['  */
-  YYSYMBOL_38_ = 38,                       /* ']'  */
-  YYSYMBOL_YYACCEPT = 39,                  /* $accept  */
-  YYSYMBOL_programa = 40,                  /* programa  */
-  YYSYMBOL_bloque = 41,                    /* bloque  */
-  YYSYMBOL_42_1 = 42,                      /* $@1  */
-  YYSYMBOL_instrucciones = 43,             /* instrucciones  */
-  YYSYMBOL_instruccion = 44,               /* instruccion  */
-  YYSYMBOL_declaracion = 45,               /* declaracion  */
-  YYSYMBOL_for_init = 46,                  /* for_init  */
-  YYSYMBOL_asignacion = 47,                /* asignacion  */
-  YYSYMBOL_prefijo_declaracion = 48,       /* prefijo_declaracion  */
-  YYSYMBOL_tipo = 49,                      /* tipo  */
-  YYSYMBOL_declarar_lista_ids = 50,        /* declarar_lista_ids  */
-  YYSYMBOL_lista_asignaciones = 51,        /* lista_asignaciones  */
-  YYSYMBOL_asignacion_unitaria = 52,       /* asignacion_unitaria  */
-  YYSYMBOL_loop = 53,                      /* loop  */
-  YYSYMBOL_54_2 = 54,                      /* $@2  */
-  YYSYMBOL_condicion_loop = 55,            /* condicion_loop  */
-  YYSYMBOL_loop_consecuencia = 56,         /* loop_consecuencia  */
-  YYSYMBOL_expresion = 57,                 /* expresion  */
-  YYSYMBOL_condicionales = 58,             /* condicionales  */
-  YYSYMBOL_59_3 = 59,                      /* $@3  */
-  YYSYMBOL_60_4 = 60,                      /* $@4  */
-  YYSYMBOL_61_5 = 61,                      /* $@5  */
-  YYSYMBOL_62_6 = 62,                      /* $@6  */
-  YYSYMBOL_63_7 = 63,                      /* $@7  */
-  YYSYMBOL_bloque_else = 64,               /* bloque_else  */
-  YYSYMBOL_65_8 = 65,                      /* $@8  */
-  YYSYMBOL_66_9 = 66,                      /* $@9  */
-  YYSYMBOL_67_10 = 67,                     /* $@10  */
-  YYSYMBOL_68_11 = 68,                     /* $@11  */
-  YYSYMBOL_switch_cases = 69,              /* switch_cases  */
-  YYSYMBOL_70_12 = 70,                     /* $@12  */
-  YYSYMBOL_71_13 = 71,                     /* $@13  */
-  YYSYMBOL_72_14 = 72,                     /* $@14  */
-  YYSYMBOL_condicion_IF = 73,              /* condicion_IF  */
-  YYSYMBOL_declaracion_variables_funcion = 74, /* declaracion_variables_funcion  */
-  YYSYMBOL_lista_parametros = 75,          /* lista_parametros  */
-  YYSYMBOL_76_15 = 76,                     /* $@15  */
-  YYSYMBOL_parametro_void = 77,            /* parametro_void  */
-  YYSYMBOL_funcion_void = 78,              /* funcion_void  */
-  YYSYMBOL_79_16 = 79,                     /* $@16  */
-  YYSYMBOL_80_17 = 80,                     /* $@17  */
-  YYSYMBOL_funcion_NO_void = 81,           /* funcion_NO_void  */
-  YYSYMBOL_82_18 = 82,                     /* $@18  */
-  YYSYMBOL_83_19 = 83,                     /* $@19  */
-  YYSYMBOL_llamar_funcion = 84,            /* llamar_funcion  */
-  YYSYMBOL_85_20 = 85,                     /* $@20  */
-  YYSYMBOL_86_21 = 86,                     /* $@21  */
-  YYSYMBOL_usar_variables_funcion = 87,    /* usar_variables_funcion  */
-  YYSYMBOL_lista_parametros_llamar_funcion = 88, /* lista_parametros_llamar_funcion  */
-  YYSYMBOL_89_22 = 89,                     /* $@22  */
-  YYSYMBOL_parametro_llamar_funcion = 90,  /* parametro_llamar_funcion  */
-  YYSYMBOL_volumen_array = 91,             /* volumen_array  */
-  YYSYMBOL_dimension_array = 92,           /* dimension_array  */
-  YYSYMBOL_arrays = 93,                    /* arrays  */
-  YYSYMBOL_asignacion_array = 94,          /* asignacion_array  */
-  YYSYMBOL_inicializador_array = 95,       /* inicializador_array  */
-  YYSYMBOL_lista_inicializadores = 96,     /* lista_inicializadores  */
-  YYSYMBOL_valor_o_anidado = 97            /* valor_o_anidado  */
+  YYSYMBOL_NO_IGUAL = 19,                  /* NO_IGUAL  */
+  YYSYMBOL_BREAK = 20,                     /* BREAK  */
+  YYSYMBOL_DEFAULT = 21,                   /* DEFAULT  */
+  YYSYMBOL_AND = 22,                       /* AND  */
+  YYSYMBOL_OR = 23,                        /* OR  */
+  YYSYMBOL_ID = 24,                        /* ID  */
+  YYSYMBOL_NUMERO = 25,                    /* NUMERO  */
+  YYSYMBOL_26_ = 26,                       /* '<'  */
+  YYSYMBOL_27_ = 27,                       /* '>'  */
+  YYSYMBOL_28_ = 28,                       /* '+'  */
+  YYSYMBOL_29_ = 29,                       /* '-'  */
+  YYSYMBOL_30_ = 30,                       /* '*'  */
+  YYSYMBOL_31_ = 31,                       /* '/'  */
+  YYSYMBOL_32_ = 32,                       /* '%'  */
+  YYSYMBOL_33_ = 33,                       /* '!'  */
+  YYSYMBOL_34_ = 34,                       /* '{'  */
+  YYSYMBOL_35_ = 35,                       /* '}'  */
+  YYSYMBOL_36_ = 36,                       /* ';'  */
+  YYSYMBOL_37_ = 37,                       /* ','  */
+  YYSYMBOL_38_ = 38,                       /* '='  */
+  YYSYMBOL_39_ = 39,                       /* '['  */
+  YYSYMBOL_40_ = 40,                       /* ']'  */
+  YYSYMBOL_41_ = 41,                       /* '('  */
+  YYSYMBOL_42_ = 42,                       /* ')'  */
+  YYSYMBOL_43_ = 43,                       /* ':'  */
+  YYSYMBOL_YYACCEPT = 44,                  /* $accept  */
+  YYSYMBOL_programa = 45,                  /* programa  */
+  YYSYMBOL_instrucciones = 46,             /* instrucciones  */
+  YYSYMBOL_instruccion = 47,               /* instruccion  */
+  YYSYMBOL_declaracion = 48,               /* declaracion  */
+  YYSYMBOL_for_init = 49,                  /* for_init  */
+  YYSYMBOL_asignacion = 50,                /* asignacion  */
+  YYSYMBOL_prefijo_declaracion = 51,       /* prefijo_declaracion  */
+  YYSYMBOL_tipo = 52,                      /* tipo  */
+  YYSYMBOL_declarar_lista_ids = 53,        /* declarar_lista_ids  */
+  YYSYMBOL_lista_asignaciones = 54,        /* lista_asignaciones  */
+  YYSYMBOL_asignacion_unitaria = 55,       /* asignacion_unitaria  */
+  YYSYMBOL_accesos_array = 56,             /* accesos_array  */
+  YYSYMBOL_loop = 57,                      /* loop  */
+  YYSYMBOL_58_2 = 58,                      /* $@2  */
+  YYSYMBOL_condicion_loop = 59,            /* condicion_loop  */
+  YYSYMBOL_loop_consecuencia = 60,         /* loop_consecuencia  */
+  YYSYMBOL_expresion = 61,                 /* expresion  */
+  YYSYMBOL_condicionales = 62,             /* condicionales  */
+  YYSYMBOL_63_3 = 63,                      /* $@3  */
+  YYSYMBOL_64_4 = 64,                      /* $@4  */
+  YYSYMBOL_65_5 = 65,                      /* $@5  */
+  YYSYMBOL_66_6 = 66,                      /* $@6  */
+  YYSYMBOL_67_7 = 67,                      /* $@7  */
+  YYSYMBOL_bloque_else = 68,               /* bloque_else  */
+  YYSYMBOL_69_8 = 69,                      /* $@8  */
+  YYSYMBOL_70_9 = 70,                      /* $@9  */
+  YYSYMBOL_71_10 = 71,                     /* $@10  */
+  YYSYMBOL_72_11 = 72,                     /* $@11  */
+  YYSYMBOL_switch_cases = 73,              /* switch_cases  */
+  YYSYMBOL_74_12 = 74,                     /* $@12  */
+  YYSYMBOL_75_13 = 75,                     /* $@13  */
+  YYSYMBOL_76_14 = 76,                     /* $@14  */
+  YYSYMBOL_condicion_IF = 77,              /* condicion_IF  */
+  YYSYMBOL_declaracion_variables_funcion = 78, /* declaracion_variables_funcion  */
+  YYSYMBOL_lista_parametros = 79,          /* lista_parametros  */
+  YYSYMBOL_80_15 = 80,                     /* $@15  */
+  YYSYMBOL_parametro_void = 81,            /* parametro_void  */
+  YYSYMBOL_funcion_void = 82,              /* funcion_void  */
+  YYSYMBOL_83_16 = 83,                     /* $@16  */
+  YYSYMBOL_84_17 = 84,                     /* $@17  */
+  YYSYMBOL_funcion_NO_void = 85,           /* funcion_NO_void  */
+  YYSYMBOL_86_18 = 86,                     /* $@18  */
+  YYSYMBOL_87_19 = 87,                     /* $@19  */
+  YYSYMBOL_llamar_funcion = 88,            /* llamar_funcion  */
+  YYSYMBOL_89_20 = 89,                     /* $@20  */
+  YYSYMBOL_90_21 = 90,                     /* $@21  */
+  YYSYMBOL_usar_variables_funcion = 91,    /* usar_variables_funcion  */
+  YYSYMBOL_lista_parametros_llamar_funcion = 92, /* lista_parametros_llamar_funcion  */
+  YYSYMBOL_93_22 = 93,                     /* $@22  */
+  YYSYMBOL_parametro_llamar_funcion = 94,  /* parametro_llamar_funcion  */
+  YYSYMBOL_llamada_funcion_expr = 95,      /* llamada_funcion_expr  */
+  YYSYMBOL_usar_variables_funcion_expr = 96, /* usar_variables_funcion_expr  */
+  YYSYMBOL_lista_parametros_llamar_funcion_expr = 97, /* lista_parametros_llamar_funcion_expr  */
+  YYSYMBOL_volumen_array = 98,             /* volumen_array  */
+  YYSYMBOL_dimension_array = 99,           /* dimension_array  */
+  YYSYMBOL_arrays = 100,                   /* arrays  */
+  YYSYMBOL_asignacion_array = 101,         /* asignacion_array  */
+  YYSYMBOL_inicializador_array = 102,      /* inicializador_array  */
+  YYSYMBOL_lista_inicializadores = 103,    /* lista_inicializadores  */
+  YYSYMBOL_valor_o_anidado = 104           /* valor_o_anidado  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -645,19 +673,19 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  3
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   405
+#define YYLAST   645
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  39
+#define YYNTOKENS  44
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  59
+#define YYNNTS  61
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  120
+#define YYNRULES  130
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  236
+#define YYNSTATES  252
 
 /* YYMAXUTOK -- Last valid token kind.  */
-#define YYMAXUTOK   277
+#define YYMAXUTOK   280
 
 
 /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
@@ -674,16 +702,16 @@ static const yytype_int8 yytranslate[] =
        0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-      32,    33,    25,    23,    30,    24,     2,    26,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,    36,    29,
-      35,    31,    34,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,    37,     2,    38,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,    33,     2,     2,     2,    32,     2,     2,
+      41,    42,    30,    28,    37,    29,     2,    31,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,    43,    36,
+      26,    38,    27,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,     2,     2,    27,     2,    28,     2,     2,     2,     2,
+       2,    39,     2,    40,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
+       2,     2,     2,    34,     2,    35,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -698,26 +726,28 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
-      15,    16,    17,    18,    19,    20,    21,    22
+      15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
+      25
 };
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,    56,    56,    59,    59,    78,    79,    82,    83,    84,
-      85,    86,    87,    88,    89,    90,    93,    94,    97,   100,
-     101,   104,   106,   107,   110,   111,   112,   113,   116,   132,
-     148,   165,   184,   185,   188,   198,   208,   218,   228,   238,
-     250,   250,   270,   276,   283,   289,   295,   301,   307,   313,
-     321,   330,   341,   352,   366,   382,   389,   403,   418,   433,
-     446,   449,   452,   446,   455,   457,   455,   470,   475,   479,
-     470,   483,   483,   493,   496,   504,   496,   507,   507,   516,
-     523,   526,   531,   535,   539,   543,   547,   551,   557,   558,
-     561,   562,   562,   569,   586,   597,   586,   607,   627,   607,
-     640,   648,   640,   653,   654,   657,   658,   658,   665,   671,
-     672,   675,   676,   679,   701,   705,   712,   723,   728,   741,
-     746
+       0,    78,    78,    96,    97,   100,   101,   102,   103,   104,
+     105,   106,   107,   108,   113,   119,   120,   123,   126,   127,
+     130,   132,   133,   136,   137,   138,   139,   142,   156,   170,
+     187,   206,   207,   210,   229,   240,   246,   252,   258,   264,
+     273,   279,   287,   287,   304,   309,   316,   324,   325,   333,
+     341,   352,   368,   384,   387,   399,   408,   416,   425,   433,
+     441,   449,   457,   465,   470,   475,   480,   485,   490,   495,
+     505,   508,   511,   505,   514,   516,   514,   526,   530,   534,
+     526,   538,   538,   547,   550,   558,   550,   561,   561,   569,
+     573,   576,   581,   587,   588,   591,   592,   592,   595,   613,
+     630,   613,   655,   672,   655,   694,   701,   694,   731,   732,
+     735,   736,   736,   739,   750,   785,   786,   789,   797,   809,
+     809,   811,   811,   813,   834,   835,   839,   848,   853,   863,
+     867
 };
 #endif
 
@@ -735,22 +765,24 @@ static const char *const yytname[] =
 {
   "\"end of file\"", "error", "\"invalid token\"", "IF", "ELSE", "WHILE",
   "RETURN", "INT", "FLOAT", "CHAR", "CONST", "DOUBLE", "FOR", "SWITCH",
-  "CASE", "VOID", "MAYOR_IGUAL", "IGUAL_IGUAL", "MENOR_IGUAL", "BREAK",
-  "DEFAULT", "ID", "NUMERO", "'+'", "'-'", "'*'", "'/'", "'{'", "'}'",
-  "';'", "','", "'='", "'('", "')'", "'>'", "'<'", "':'", "'['", "']'",
-  "$accept", "programa", "bloque", "$@1", "instrucciones", "instruccion",
-  "declaracion", "for_init", "asignacion", "prefijo_declaracion", "tipo",
-  "declarar_lista_ids", "lista_asignaciones", "asignacion_unitaria",
-  "loop", "$@2", "condicion_loop", "loop_consecuencia", "expresion",
+  "CASE", "VOID", "MAYOR_IGUAL", "IGUAL_IGUAL", "MENOR_IGUAL", "NO_IGUAL",
+  "BREAK", "DEFAULT", "AND", "OR", "ID", "NUMERO", "'<'", "'>'", "'+'",
+  "'-'", "'*'", "'/'", "'%'", "'!'", "'{'", "'}'", "';'", "','", "'='",
+  "'['", "']'", "'('", "')'", "':'", "$accept", "programa",
+  "instrucciones", "instruccion", "declaracion", "for_init", "asignacion",
+  "prefijo_declaracion", "tipo", "declarar_lista_ids",
+  "lista_asignaciones", "asignacion_unitaria", "accesos_array", "loop",
+  "$@2", "condicion_loop", "loop_consecuencia", "expresion",
   "condicionales", "$@3", "$@4", "$@5", "$@6", "$@7", "bloque_else", "$@8",
   "$@9", "$@10", "$@11", "switch_cases", "$@12", "$@13", "$@14",
   "condicion_IF", "declaracion_variables_funcion", "lista_parametros",
   "$@15", "parametro_void", "funcion_void", "$@16", "$@17",
   "funcion_NO_void", "$@18", "$@19", "llamar_funcion", "$@20", "$@21",
   "usar_variables_funcion", "lista_parametros_llamar_funcion", "$@22",
-  "parametro_llamar_funcion", "volumen_array", "dimension_array", "arrays",
-  "asignacion_array", "inicializador_array", "lista_inicializadores",
-  "valor_o_anidado", YY_NULLPTR
+  "parametro_llamar_funcion", "llamada_funcion_expr",
+  "usar_variables_funcion_expr", "lista_parametros_llamar_funcion_expr",
+  "volumen_array", "dimension_array", "arrays", "asignacion_array",
+  "inicializador_array", "lista_inicializadores", "valor_o_anidado", YY_NULLPTR
 };
 
 static const char *
@@ -760,12 +792,12 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-170)
+#define YYPACT_NINF (-190)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
 
-#define YYTABLE_NINF (-81)
+#define YYTABLE_NINF (-91)
 
 #define yytable_value_is_error(Yyn) \
   0
@@ -774,83 +806,89 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int16 yypact[] =
 {
-    -170,     7,   376,  -170,   -16,     2,  -170,  -170,  -170,     1,
-    -170,  -170,    21,    43,    66,    36,     0,  -170,  -170,  -170,
-    -170,  -170,  -170,    44,  -170,    -1,  -170,  -170,  -170,  -170,
-    -170,  -170,  -170,  -170,    35,    74,  -170,    62,    84,    35,
-      87,    95,    98,    35,  -170,   103,   104,  -170,   -12,    78,
-    -170,    12,    35,  -170,  -170,    35,    97,    86,    35,  -170,
-     121,    31,    90,  -170,  -170,  -170,   188,    35,  -170,  -170,
-      72,  -170,   124,  -170,   125,  -170,   110,   117,   114,   126,
-      35,    35,    35,    35,    35,    35,    35,    35,    35,   188,
-     120,  -170,    35,  -170,   133,  -170,   179,   188,   128,   127,
-    -170,  -170,   179,  -170,   130,    35,    35,    35,    35,    35,
-      35,  -170,  -170,  -170,   188,   188,   188,   137,   137,  -170,
-     188,   188,   188,    35,   136,   139,   149,   141,   152,  -170,
-    -170,  -170,   160,   157,   188,   188,   188,   188,   188,   188,
-     172,   168,   188,   -10,  -170,  -170,  -170,  -170,   180,    35,
-    -170,   124,   170,  -170,  -170,   -18,   190,   182,     3,   193,
-     179,  -170,  -170,   194,   198,   199,   209,   195,   205,    35,
-     196,   212,     3,    35,   204,   213,  -170,  -170,  -170,   157,
-       5,  -170,  -170,  -170,  -170,   188,  -170,  -170,  -170,    38,
-    -170,  -170,   222,   249,  -170,   188,  -170,    48,  -170,   238,
-     272,  -170,  -170,  -170,    35,  -170,     5,   241,  -170,  -170,
-    -170,   376,   135,  -170,   215,   221,   299,   225,  -170,  -170,
-     234,  -170,    35,   322,  -170,   232,  -170,     3,  -170,  -170,
-     239,  -170,   349,  -170,   238,  -170
+    -190,    15,   430,  -190,   -17,   -10,   -14,  -190,  -190,  -190,
+      27,  -190,  -190,     6,     5,    89,    30,    26,  -190,  -190,
+    -190,  -190,    49,  -190,    67,  -190,  -190,  -190,  -190,  -190,
+    -190,  -190,  -190,    54,   -21,  -190,    54,  -190,    54,   551,
+    -190,    51,  -190,    95,    42,    54,    55,    70,    78,    54,
+      54,  -190,    97,   101,   117,     7,   122,  -190,   -15,    54,
+     109,   517,    54,    98,  -190,   445,    54,    54,    54,    54,
+      54,    54,    54,    54,    54,    54,    54,    54,    54,  -190,
+      54,  -190,   136,    -3,   462,  -190,  -190,  -190,   572,   479,
+      54,    54,    54,  -190,  -190,   138,  -190,  -190,    52,  -190,
+     534,   126,   130,    54,   572,   127,   134,  -190,   125,   613,
+     125,   613,   606,   589,   125,   125,    45,    45,  -190,  -190,
+    -190,   572,   129,  -190,    54,  -190,   150,  -190,   113,  -190,
+     572,   133,   139,  -190,   572,   498,  -190,   140,   113,    54,
+    -190,  -190,   572,  -190,    54,    54,   141,   144,   155,   142,
+     146,  -190,  -190,  -190,  -190,   148,   143,   572,   147,   137,
+     572,   572,   -12,  -190,  -190,  -190,  -190,   152,    54,   138,
+     151,  -190,  -190,  -190,    14,   161,   160,     2,   170,   113,
+    -190,  -190,   165,   172,   171,   174,   188,   181,    54,   186,
+     177,     2,    54,   176,   178,  -190,  -190,   148,    16,  -190,
+    -190,  -190,  -190,  -190,   572,  -190,  -190,  -190,    83,  -190,
+    -190,   228,  -190,   572,  -190,    57,  -190,   262,   210,   296,
+    -190,  -190,  -190,  -190,    16,  -190,   212,  -190,  -190,  -190,
+     430,  -190,   179,   187,   330,  -190,  -190,   189,    54,   362,
+    -190,   180,  -190,     2,  -190,  -190,   192,  -190,   396,  -190,
+     210,  -190
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
    Performed when YYTABLE does not specify something else to do.  Zero
    means the default is an error.  */
-static const yytype_int8 yydefact[] =
+static const yytype_uint8 yydefact[] =
 {
-       6,     0,     2,     1,     0,     0,    24,    25,    26,     0,
-      27,    40,     0,     0,    39,     0,     0,     3,    18,     9,
-       5,     7,     8,     0,    22,     0,    32,    10,    11,    12,
-      13,    14,    15,    60,     0,    28,    23,     0,     0,     0,
-       0,     0,     0,     0,   100,     0,     0,     6,    28,     0,
-      21,     0,     0,    54,    55,     0,     0,    49,     0,    17,
-       0,     0,     0,    94,    35,    36,    34,   104,    37,    38,
-       0,    97,   110,    16,    39,    33,    87,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,     0,     0,     0,    30,
-      29,    19,     0,    20,     0,    64,    89,   108,     0,   103,
-     105,     4,    89,   109,     0,     0,     0,     0,     0,     0,
-       0,    61,    59,     6,    46,    48,    47,    56,    57,    58,
-      43,    44,    45,     0,     0,     0,     0,     0,    88,    90,
-     101,   106,     0,   112,    84,    86,    85,    81,    82,    83,
-       0,     0,    31,     0,    65,    93,    95,    91,     0,     0,
-      98,   110,   115,     6,    42,    50,     0,     0,     0,     0,
-       0,   102,   107,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,     6,    92,     6,   112,
-       0,   114,   113,    62,    51,    53,    52,     6,    79,     0,
-      77,    66,     0,     0,   111,   119,   120,     0,   117,    73,
-       0,    74,     6,    96,     0,   116,     0,    71,    63,    41,
-       6,    78,     0,   118,     0,     0,     0,     0,    67,     6,
-       0,    99,     0,     0,    75,     0,    72,     0,    68,    76,
-       0,     6,     0,    69,    73,    70
+       4,     0,     2,     1,     0,     0,     0,    23,    24,    25,
+       0,    26,    42,     0,     0,    39,     0,     0,    17,     3,
+       5,     6,     0,    21,     0,    31,     7,     8,     9,    10,
+      11,    12,    70,     0,    51,    54,     0,    14,     0,     0,
+      53,    27,    22,     0,     0,     0,     0,     0,     0,     0,
+       0,   105,     0,     0,     0,    27,     0,    20,     0,     0,
+       0,    46,   116,    52,    62,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,    13,
+       0,    16,     0,     0,     0,    99,    35,    36,    33,     0,
+     109,     0,     0,    37,    38,   120,   102,    15,    39,    32,
+      92,     0,     0,     0,   117,     0,   115,    69,    67,    65,
+      68,    66,    60,    61,    64,    63,    55,    56,    57,    58,
+      59,    29,    28,    18,     0,    19,     0,    74,    94,    40,
+     113,     0,   108,   110,    34,     0,   119,     0,    94,     0,
+      71,     4,    45,   114,     0,     0,     0,     0,     0,     0,
+      93,    95,   106,   111,    41,   122,     0,    91,     0,     0,
+     118,    30,     0,    75,    98,   100,    96,     0,     0,   120,
+     125,   103,     4,    44,    47,     0,     0,     0,     0,     0,
+     107,   112,     0,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,     0,     4,    97,   122,     0,   124,
+     123,     4,    72,    48,    50,    49,     4,    89,     0,    87,
+      76,     0,   121,   129,   130,     0,   127,     0,    83,     0,
+      84,     4,   101,   126,     0,   104,    81,    73,    43,     4,
+      88,   128,     0,     0,     0,    77,     4,     0,     0,     0,
+      85,     0,    82,     0,    78,    86,     0,     4,     0,    79,
+      83,    80
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int16 yypgoto[] =
 {
-    -170,  -170,  -170,  -170,   -47,  -170,   206,  -170,   207,   208,
-      -8,   262,  -170,   223,  -170,  -170,   197,  -170,   -37,  -170,
-    -170,  -170,  -170,  -170,  -170,    52,  -170,  -170,  -170,  -170,
-    -169,  -170,  -170,  -170,    68,   186,  -170,  -170,   131,  -170,
-    -170,  -170,  -170,  -170,  -170,  -170,  -170,  -170,  -170,  -170,
-    -170,   143,   146,   115,  -170,  -170,   138,  -170,    92
+    -190,  -190,  -113,  -190,   145,  -190,   159,   162,    -9,   217,
+    -190,   190,   195,  -190,  -190,   106,  -190,    -6,  -190,  -190,
+    -190,  -190,  -190,  -190,    -4,  -190,  -190,  -190,  -190,  -189,
+    -190,  -190,  -190,     9,   111,  -190,  -190,    65,  -190,  -190,
+    -190,  -190,  -190,  -190,  -190,  -190,  -190,  -190,  -190,  -190,
+      82,  -190,  -190,  -190,    84,    58,  -190,  -190,    68,  -190,
+      34
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_uint8 yydefgoto[] =
 {
-       0,     1,    19,    47,     2,    20,    21,    92,    22,    23,
-      24,    49,    25,    26,    27,    38,    56,   157,    57,    28,
-      52,   140,   199,   125,   158,   208,   222,   230,   234,   215,
-     175,   210,   227,   202,    77,   127,   128,   160,   129,    29,
-      96,   159,    30,   102,   163,    31,    67,   148,    98,    99,
-     149,   100,   104,   152,    32,   166,   196,   197,   198
+       0,     1,     2,    19,    20,   124,    21,    22,    23,    56,
+      24,    25,    52,    26,    44,    60,   176,    61,    27,    59,
+     158,   218,   147,   177,   227,   238,   246,   250,   233,   194,
+     229,   243,   221,   101,   149,   150,   179,   151,    28,   128,
+     178,    29,   138,   185,    30,    90,   167,   131,   132,   168,
+     133,    40,   105,   106,   137,   170,    31,   184,   214,   215,
+     216
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -858,156 +896,208 @@ static const yytype_uint8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int16 yytable[] =
 {
-      70,    36,    62,   188,   172,   168,    66,     3,     6,     7,
-       8,   155,    10,   169,   156,    76,    33,   173,    78,    58,
-      71,    89,    35,   174,    46,    72,    53,    54,    50,    51,
-      97,   -80,   180,    74,    34,    15,    16,    55,     6,     7,
-       8,     9,    10,   114,   115,   116,   117,   118,   119,   120,
-     121,   122,    74,    39,    15,    16,    53,    54,   229,    45,
-      18,    83,    84,    85,    40,    48,   141,    55,   134,   135,
-     136,   137,   138,   139,   201,     4,   205,     5,   206,     6,
-       7,     8,     9,    10,    11,    12,   142,    13,   126,    41,
-      42,    59,    60,    14,   126,    15,    16,    43,    44,    17,
-     101,    18,    80,    81,    82,    58,   167,    73,    60,    83,
-      84,    85,    97,    83,    84,    85,    61,    86,    64,    63,
-      87,    88,    65,    95,    68,    69,   105,   106,   107,   192,
-      79,   193,   185,    83,    84,    85,   189,    83,    84,    85,
-     200,   108,    90,   195,   109,   110,   103,   112,    41,    42,
-     111,   123,   126,   113,    35,   211,    43,   131,    83,    84,
-      85,   130,    85,   216,   217,   143,   144,   212,   133,   195,
-     145,     4,   223,     5,   146,     6,     7,     8,     9,    10,
-      11,    12,   147,    13,   232,    76,     6,     7,     8,    14,
-      10,    15,    16,   150,   151,    17,   154,    18,     4,   153,
-       5,   165,     6,     7,     8,     9,    10,    11,    12,   161,
-      13,    83,    84,    85,   170,   171,    14,   186,    15,    16,
-     176,   178,    17,   183,    18,     4,   180,     5,   184,     6,
-       7,     8,     9,    10,    11,    12,   179,    13,   182,   187,
-     190,   191,   207,    14,   214,    15,    16,   218,   219,    17,
-     203,    18,     4,   221,     5,   204,     6,     7,     8,     9,
-      10,    11,    12,   224,    13,   228,   231,    91,    93,    94,
-      14,    37,    15,    16,    75,     4,    17,     5,    18,     6,
-       7,     8,     9,    10,    11,    12,   235,    13,   132,   124,
-     225,   177,   162,    14,   194,    15,    16,   164,   213,    17,
-     209,    18,     4,   181,     5,     0,     6,     7,     8,     9,
-      10,    11,    12,     0,    13,     0,     0,     0,   220,     0,
-      14,     0,    15,    16,     0,     4,    17,     5,    18,     6,
-       7,     8,     9,    10,    11,    12,     0,    13,     0,     0,
-       0,     0,     0,    14,     0,    15,    16,     0,     0,    17,
-     226,    18,     4,     0,     5,     0,     6,     7,     8,     9,
-      10,    11,    12,     0,    13,     0,     0,     0,     0,     0,
-      14,     0,    15,    16,     0,     0,    17,   233,    18,     4,
-       0,     5,     0,     6,     7,     8,     9,    10,    11,    12,
-       0,    13,     0,     0,     0,     0,     0,    14,     0,    15,
-      16,     0,     0,    17,     0,    18
+      39,    42,   207,   191,     7,     8,     9,    10,    11,    98,
+      34,    35,   174,    16,    17,     3,   192,   175,    50,    36,
+      62,    98,    37,   193,    32,    16,    17,    38,   159,    46,
+      64,    33,    65,    18,     7,     8,     9,   -90,    11,    84,
+      34,    35,   187,    88,    89,    80,    95,    45,    96,    36,
+     198,    41,   188,   100,   245,    54,   104,    38,    53,   186,
+     108,   109,   110,   111,   112,   113,   114,   115,   116,   117,
+     118,   119,   120,    55,   121,    76,    77,    78,    34,    35,
+      47,    48,   211,    83,   130,   134,   135,    36,   217,    80,
+      49,    50,   223,   219,   224,    38,    85,   142,    86,    66,
+      67,    68,    69,    57,    58,    70,    71,    87,   230,    72,
+      73,    74,    75,    76,    77,    78,   234,    47,    48,   148,
+       7,     8,     9,   239,    11,    93,   220,    49,    50,   148,
+      51,    81,    82,   157,   248,    91,    92,    92,   160,   161,
+       4,    94,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,   102,    14,    74,    75,    76,    77,    78,    97,    82,
+     122,    15,   130,   136,   141,    16,    17,   145,   140,   143,
+     148,   144,   173,    18,    41,   152,   153,   162,   163,   164,
+     155,   172,   204,   166,   165,   171,   208,   169,   180,   183,
+     189,     4,   213,     5,     6,     7,     8,     9,    10,    11,
+      12,    13,   190,    14,   195,   197,   198,   200,   201,   203,
+     205,   206,    15,   210,   226,   232,    16,    17,   213,   209,
+     235,   236,   244,   202,    18,   240,   247,    43,   123,    63,
+     146,     4,   100,     5,     6,     7,     8,     9,    10,    11,
+      12,    13,   125,    14,   196,   126,   251,   241,    99,   156,
+     181,   199,    15,   182,     0,   212,    16,    17,   231,     0,
+       0,     0,     0,   222,    18,     4,     0,     5,     6,     7,
+       8,     9,    10,    11,    12,    13,     0,    14,     0,     0,
+       0,     0,     0,     0,     0,     0,    15,     0,     0,     0,
+      16,    17,     0,     0,     0,     0,     0,   225,    18,     4,
+       0,     5,     6,     7,     8,     9,    10,    11,    12,    13,
+       0,    14,     0,     0,     0,     0,     0,     0,     0,     0,
+      15,     0,     0,     0,    16,    17,     0,     0,     0,     0,
+       0,   228,    18,     4,     0,     5,     6,     7,     8,     9,
+      10,    11,    12,    13,     0,    14,     0,     0,     0,     0,
+     237,     0,     0,     0,    15,     0,     0,     0,    16,    17,
+       0,     0,     0,     0,     0,     4,    18,     5,     6,     7,
+       8,     9,    10,    11,    12,    13,     0,    14,     0,     0,
+       0,     0,     0,     0,     0,     0,    15,     0,     0,     0,
+      16,    17,     0,     0,     0,     0,     0,   242,    18,     4,
+       0,     5,     6,     7,     8,     9,    10,    11,    12,    13,
+       0,    14,     0,     0,     0,     0,     0,     0,     0,     0,
+      15,     0,     0,     0,    16,    17,     0,     0,     0,     0,
+       0,   249,    18,     4,     0,     5,     6,     7,     8,     9,
+      10,    11,    12,    13,     0,    14,     0,     0,     0,     0,
+       0,     0,     0,     0,    15,     0,     0,     0,    16,    17,
+       0,    66,    67,    68,    69,     0,    18,    70,    71,     0,
+       0,    72,    73,    74,    75,    76,    77,    78,    66,    67,
+      68,    69,     0,     0,    70,    71,     0,   107,    72,    73,
+      74,    75,    76,    77,    78,    66,    67,    68,    69,     0,
+       0,    70,    71,     0,   127,    72,    73,    74,    75,    76,
+      77,    78,     0,     0,    66,    67,    68,    69,     0,   129,
+      70,    71,     0,     0,    72,    73,    74,    75,    76,    77,
+      78,     0,     0,    66,    67,    68,    69,     0,   154,    70,
+      71,     0,     0,    72,    73,    74,    75,    76,    77,    78,
+      66,    67,    68,    69,     0,   103,    70,    71,     0,     0,
+      72,    73,    74,    75,    76,    77,    78,    66,    67,    68,
+      69,     0,   139,    70,    71,     0,     0,    72,    73,    74,
+      75,    76,    77,    78,     0,     0,     0,    79,    66,    67,
+      68,    69,     0,     0,    70,    71,     0,     0,    72,    73,
+      74,    75,    76,    77,    78,    66,    67,    68,    69,     0,
+       0,    70,     0,     0,     0,    72,    73,    74,    75,    76,
+      77,    78,    66,    67,    68,    69,     0,     0,     0,    66,
+       0,    68,    72,    73,    74,    75,    76,    77,    78,    72,
+      73,    74,    75,    76,    77,    78
 };
 
 static const yytype_int16 yycheck[] =
 {
-      47,     9,    39,   172,     1,    23,    43,     0,     7,     8,
-       9,    21,    11,    31,    24,    52,    32,    14,    55,    31,
-      32,    58,    21,    20,    24,    37,    21,    22,    29,    30,
-      67,    28,    27,    21,    32,    23,    24,    32,     7,     8,
-       9,    10,    11,    80,    81,    82,    83,    84,    85,    86,
-      87,    88,    21,    32,    23,    24,    21,    22,   227,    23,
-      29,    23,    24,    25,    21,    21,   113,    32,   105,   106,
-     107,   108,   109,   110,    36,     3,    28,     5,    30,     7,
-       8,     9,    10,    11,    12,    13,   123,    15,    96,    23,
-      24,    29,    30,    21,   102,    23,    24,    31,    32,    27,
-      28,    29,    16,    17,    18,    31,   153,    29,    30,    23,
-      24,    25,   149,    23,    24,    25,    32,    31,    23,    32,
-      34,    35,    24,    33,    21,    21,    16,    17,    18,   176,
-      33,   178,   169,    23,    24,    25,   173,    23,    24,    25,
-     187,    31,    21,   180,    34,    35,    22,    33,    23,    24,
-      33,    31,   160,    27,    21,   202,    31,    30,    23,    24,
-      25,    33,    25,   210,    29,    29,    27,   204,    38,   206,
-      21,     3,   219,     5,    33,     7,     8,     9,    10,    11,
-      12,    13,    30,    15,   231,   222,     7,     8,     9,    21,
-      11,    23,    24,    33,    37,    27,    28,    29,     3,    27,
-       5,    31,     7,     8,     9,    10,    11,    12,    13,    29,
-      15,    23,    24,    25,    24,    33,    21,    21,    23,    24,
-      27,    27,    27,    28,    29,     3,    27,     5,    23,     7,
-       8,     9,    10,    11,    12,    13,    38,    15,    29,    27,
-      36,    28,     4,    21,     3,    23,    24,    32,    27,    27,
-      28,    29,     3,    28,     5,     6,     7,     8,     9,    10,
-      11,    12,    13,    29,    15,    33,    27,    61,    61,    61,
-      21,     9,    23,    24,    51,     3,    27,     5,    29,     7,
-       8,     9,    10,    11,    12,    13,   234,    15,   102,    92,
-     222,   160,   149,    21,   179,    23,    24,   151,   206,    27,
-      28,    29,     3,   165,     5,    -1,     7,     8,     9,    10,
-      11,    12,    13,    -1,    15,    -1,    -1,    -1,    19,    -1,
-      21,    -1,    23,    24,    -1,     3,    27,     5,    29,     7,
+       6,    10,   191,     1,     7,     8,     9,    10,    11,    24,
+      24,    25,    24,    28,    29,     0,    14,    29,    39,    33,
+      41,    24,    36,    21,    41,    28,    29,    41,   141,    24,
+      36,    41,    38,    36,     7,     8,     9,    35,    11,    45,
+      24,    25,    28,    49,    50,    38,    39,    41,    41,    33,
+      34,    24,    38,    59,   243,    29,    62,    41,    28,   172,
+      66,    67,    68,    69,    70,    71,    72,    73,    74,    75,
+      76,    77,    78,    24,    80,    30,    31,    32,    24,    25,
+      28,    29,   195,    41,    90,    91,    92,    33,   201,    38,
+      38,    39,    35,   206,    37,    41,    41,   103,    28,    16,
+      17,    18,    19,    36,    37,    22,    23,    29,   221,    26,
+      27,    28,    29,    30,    31,    32,   229,    28,    29,   128,
+       7,     8,     9,   236,    11,    24,    43,    38,    39,   138,
+      41,    36,    37,   139,   247,    38,    39,    39,   144,   145,
+       3,    24,     5,     6,     7,     8,     9,    10,    11,    12,
+      13,    42,    15,    28,    29,    30,    31,    32,    36,    37,
+      24,    24,   168,    25,    34,    28,    29,    38,    42,    42,
+     179,    37,    35,    36,    24,    42,    37,    36,    34,    24,
+      40,    34,   188,    37,    42,    42,   192,    39,    36,    38,
+      29,     3,   198,     5,     6,     7,     8,     9,    10,    11,
+      12,    13,    42,    15,    34,    40,    34,    36,    34,    28,
+      24,    34,    24,    35,     4,     3,    28,    29,   224,    43,
+      41,    34,    42,    35,    36,    36,    34,    10,    83,    34,
+     124,     3,   238,     5,     6,     7,     8,     9,    10,    11,
+      12,    13,    83,    15,   179,    83,   250,   238,    58,   138,
+     168,   183,    24,   169,    -1,   197,    28,    29,   224,    -1,
+      -1,    -1,    -1,    35,    36,     3,    -1,     5,     6,     7,
        8,     9,    10,    11,    12,    13,    -1,    15,    -1,    -1,
-      -1,    -1,    -1,    21,    -1,    23,    24,    -1,    -1,    27,
-      28,    29,     3,    -1,     5,    -1,     7,     8,     9,    10,
-      11,    12,    13,    -1,    15,    -1,    -1,    -1,    -1,    -1,
-      21,    -1,    23,    24,    -1,    -1,    27,    28,    29,     3,
-      -1,     5,    -1,     7,     8,     9,    10,    11,    12,    13,
-      -1,    15,    -1,    -1,    -1,    -1,    -1,    21,    -1,    23,
-      24,    -1,    -1,    27,    -1,    29
+      -1,    -1,    -1,    -1,    -1,    -1,    24,    -1,    -1,    -1,
+      28,    29,    -1,    -1,    -1,    -1,    -1,    35,    36,     3,
+      -1,     5,     6,     7,     8,     9,    10,    11,    12,    13,
+      -1,    15,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+      24,    -1,    -1,    -1,    28,    29,    -1,    -1,    -1,    -1,
+      -1,    35,    36,     3,    -1,     5,     6,     7,     8,     9,
+      10,    11,    12,    13,    -1,    15,    -1,    -1,    -1,    -1,
+      20,    -1,    -1,    -1,    24,    -1,    -1,    -1,    28,    29,
+      -1,    -1,    -1,    -1,    -1,     3,    36,     5,     6,     7,
+       8,     9,    10,    11,    12,    13,    -1,    15,    -1,    -1,
+      -1,    -1,    -1,    -1,    -1,    -1,    24,    -1,    -1,    -1,
+      28,    29,    -1,    -1,    -1,    -1,    -1,    35,    36,     3,
+      -1,     5,     6,     7,     8,     9,    10,    11,    12,    13,
+      -1,    15,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+      24,    -1,    -1,    -1,    28,    29,    -1,    -1,    -1,    -1,
+      -1,    35,    36,     3,    -1,     5,     6,     7,     8,     9,
+      10,    11,    12,    13,    -1,    15,    -1,    -1,    -1,    -1,
+      -1,    -1,    -1,    -1,    24,    -1,    -1,    -1,    28,    29,
+      -1,    16,    17,    18,    19,    -1,    36,    22,    23,    -1,
+      -1,    26,    27,    28,    29,    30,    31,    32,    16,    17,
+      18,    19,    -1,    -1,    22,    23,    -1,    42,    26,    27,
+      28,    29,    30,    31,    32,    16,    17,    18,    19,    -1,
+      -1,    22,    23,    -1,    42,    26,    27,    28,    29,    30,
+      31,    32,    -1,    -1,    16,    17,    18,    19,    -1,    40,
+      22,    23,    -1,    -1,    26,    27,    28,    29,    30,    31,
+      32,    -1,    -1,    16,    17,    18,    19,    -1,    40,    22,
+      23,    -1,    -1,    26,    27,    28,    29,    30,    31,    32,
+      16,    17,    18,    19,    -1,    38,    22,    23,    -1,    -1,
+      26,    27,    28,    29,    30,    31,    32,    16,    17,    18,
+      19,    -1,    38,    22,    23,    -1,    -1,    26,    27,    28,
+      29,    30,    31,    32,    -1,    -1,    -1,    36,    16,    17,
+      18,    19,    -1,    -1,    22,    23,    -1,    -1,    26,    27,
+      28,    29,    30,    31,    32,    16,    17,    18,    19,    -1,
+      -1,    22,    -1,    -1,    -1,    26,    27,    28,    29,    30,
+      31,    32,    16,    17,    18,    19,    -1,    -1,    -1,    16,
+      -1,    18,    26,    27,    28,    29,    30,    31,    32,    26,
+      27,    28,    29,    30,    31,    32
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,    40,    43,     0,     3,     5,     7,     8,     9,    10,
-      11,    12,    13,    15,    21,    23,    24,    27,    29,    41,
-      44,    45,    47,    48,    49,    51,    52,    53,    58,    78,
-      81,    84,    93,    32,    32,    21,    49,    50,    54,    32,
-      21,    23,    24,    31,    32,    23,    24,    42,    21,    50,
-      29,    30,    59,    21,    22,    32,    55,    57,    31,    29,
-      30,    32,    57,    32,    23,    24,    57,    85,    21,    21,
-      43,    32,    37,    29,    21,    52,    57,    73,    57,    33,
-      16,    17,    18,    23,    24,    25,    31,    34,    35,    57,
-      21,    45,    46,    47,    48,    33,    79,    57,    87,    88,
-      90,    28,    82,    22,    91,    16,    17,    18,    31,    34,
-      35,    33,    33,    27,    57,    57,    57,    57,    57,    57,
-      57,    57,    57,    31,    55,    62,    49,    74,    75,    77,
-      33,    30,    74,    38,    57,    57,    57,    57,    57,    57,
-      60,    43,    57,    29,    27,    21,    33,    30,    86,    89,
-      33,    37,    92,    27,    28,    21,    24,    56,    63,    80,
-      76,    29,    90,    83,    91,    31,    94,    43,    23,    31,
-      24,    33,     1,    14,    20,    69,    27,    77,    27,    38,
-      27,    95,    29,    28,    23,    57,    21,    27,    69,    57,
-      36,    28,    43,    43,    92,    57,    95,    96,    97,    61,
-      43,    36,    72,    28,     6,    28,    30,     4,    64,    28,
-      70,    43,    57,    97,     3,    68,    43,    29,    32,    27,
-      19,    28,    65,    43,    29,    73,    28,    71,    33,    69,
-      66,    27,    43,    28,    67,    64
+       0,    45,    46,     0,     3,     5,     6,     7,     8,     9,
+      10,    11,    12,    13,    15,    24,    28,    29,    36,    47,
+      48,    50,    51,    52,    54,    55,    57,    62,    82,    85,
+      88,   100,    41,    41,    24,    25,    33,    36,    41,    61,
+      95,    24,    52,    53,    58,    41,    24,    28,    29,    38,
+      39,    41,    56,    28,    29,    24,    53,    36,    37,    63,
+      59,    61,    41,    56,    61,    61,    16,    17,    18,    19,
+      22,    23,    26,    27,    28,    29,    30,    31,    32,    36,
+      38,    36,    37,    41,    61,    41,    28,    29,    61,    61,
+      89,    38,    39,    24,    24,    39,    41,    36,    24,    55,
+      61,    77,    42,    38,    61,    96,    97,    42,    61,    61,
+      61,    61,    61,    61,    61,    61,    61,    61,    61,    61,
+      61,    61,    24,    48,    49,    50,    51,    42,    83,    40,
+      61,    91,    92,    94,    61,    61,    25,    98,    86,    38,
+      42,    34,    61,    42,    37,    38,    59,    66,    52,    78,
+      79,    81,    42,    37,    40,    40,    78,    61,    64,    46,
+      61,    61,    36,    34,    24,    42,    37,    90,    93,    39,
+      99,    42,    34,    35,    24,    29,    60,    67,    84,    80,
+      36,    94,    98,    38,   101,    87,    46,    28,    38,    29,
+      42,     1,    14,    21,    73,    34,    81,    40,    34,   102,
+      36,    34,    35,    28,    61,    24,    34,    73,    61,    43,
+      35,    46,    99,    61,   102,   103,   104,    46,    65,    46,
+      43,    76,    35,    35,    37,    35,     4,    68,    35,    74,
+      46,   104,     3,    72,    46,    41,    34,    20,    69,    46,
+      36,    77,    35,    75,    42,    73,    70,    34,    46,    35,
+      71,    68
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    39,    40,    42,    41,    43,    43,    44,    44,    44,
-      44,    44,    44,    44,    44,    44,    45,    45,    45,    46,
-      46,    47,    48,    48,    49,    49,    49,    49,    50,    50,
-      50,    50,    51,    51,    52,    52,    52,    52,    52,    52,
-      54,    53,    53,    55,    55,    55,    55,    55,    55,    55,
-      56,    56,    56,    56,    57,    57,    57,    57,    57,    57,
-      59,    60,    61,    58,    62,    63,    58,    65,    66,    67,
-      64,    68,    64,    64,    70,    71,    69,    72,    69,    69,
-      69,    73,    73,    73,    73,    73,    73,    73,    74,    74,
-      75,    76,    75,    77,    79,    80,    78,    82,    83,    81,
-      85,    86,    84,    87,    87,    88,    89,    88,    90,    91,
-      91,    92,    92,    93,    94,    94,    95,    96,    96,    97,
-      97
+       0,    44,    45,    46,    46,    47,    47,    47,    47,    47,
+      47,    47,    47,    47,    47,    48,    48,    48,    49,    49,
+      50,    51,    51,    52,    52,    52,    52,    53,    53,    53,
+      53,    54,    54,    55,    55,    55,    55,    55,    55,    55,
+      56,    56,    58,    57,    57,    59,    59,    60,    60,    60,
+      60,    61,    61,    61,    61,    61,    61,    61,    61,    61,
+      61,    61,    61,    61,    61,    61,    61,    61,    61,    61,
+      63,    64,    65,    62,    66,    67,    62,    69,    70,    71,
+      68,    72,    68,    68,    74,    75,    73,    76,    73,    73,
+      73,    77,    77,    78,    78,    79,    80,    79,    81,    83,
+      84,    82,    86,    87,    85,    89,    90,    88,    91,    91,
+      92,    93,    92,    94,    95,    96,    96,    97,    97,    98,
+      98,    99,    99,   100,   101,   101,   102,   103,   103,   104,
+     104
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     1,     0,     4,     2,     0,     1,     1,     1,
-       1,     1,     1,     1,     1,     1,     3,     3,     1,     1,
-       1,     2,     1,     2,     1,     1,     1,     1,     1,     3,
-       3,     5,     1,     3,     3,     3,     3,     3,     3,     1,
-       0,    11,     7,     3,     3,     3,     3,     3,     3,     1,
-       1,     3,     3,     3,     1,     1,     3,     3,     3,     3,
+       0,     2,     1,     2,     0,     1,     1,     1,     1,     1,
+       1,     1,     1,     3,     2,     3,     3,     1,     1,     1,
+       2,     1,     2,     1,     1,     1,     1,     1,     3,     3,
+       5,     1,     3,     3,     4,     3,     3,     3,     3,     1,
+       3,     4,     0,    11,     7,     3,     1,     1,     3,     3,
+       3,     1,     2,     1,     1,     3,     3,     3,     3,     3,
+       3,     3,     2,     3,     3,     3,     3,     3,     3,     3,
        0,     0,     0,    11,     0,     0,     9,     0,     0,     0,
       12,     0,     5,     0,     0,     0,     9,     0,     4,     2,
-       0,     3,     3,     3,     3,     3,     3,     1,     1,     0,
-       1,     0,     4,     2,     0,     0,    10,     0,     0,    13,
-       0,     0,     7,     1,     0,     1,     0,     4,     1,     1,
+       0,     3,     1,     1,     0,     1,     0,     4,     2,     0,
+       0,    10,     0,     0,    10,     0,     0,     7,     1,     0,
+       1,     0,     4,     1,     4,     1,     0,     1,     3,     1,
        0,     4,     0,     8,     2,     0,     3,     1,     3,     1,
        1
 };
@@ -1472,85 +1562,77 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-  case 3: /* $@1: %empty  */
-#line 59 "parser.y"
-               {
-                /* Acción intermedia: Al abrir '{', creamos entorno local */
-                struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
-                nuevo->tabla_simbolos = NULL;
-                nuevo->cantidad_simbolos = 0;
-                nuevo->capacidad_tabla = 0;
-                nuevo->padre = entorno_actual;
-                nuevo->id_entorno = contador_entornos++; 
-                entorno_actual = nuevo; 
-            }
-#line 1488 "y.tab.c"
+  case 13: /* instruccion: RETURN expresion ';'  */
+#line 108 "parser.y"
+                                  {
+                imprimir_indentacion();
+                fprintf(yyout_py, "return %s\n", (yyvsp[-1].info_expr)->codigo);
+                free((yyvsp[-1].info_expr)->codigo); free((yyvsp[-1].info_expr));
+           }
+#line 1573 "y.tab.c"
     break;
 
-  case 4: /* bloque: '{' $@1 instrucciones '}'  */
-#line 69 "parser.y"
-                          {
-                /* Acción final: Al cerrar '}', regresamos de nivel al padre */
-                struct Entorno *viejo = entorno_actual;
-                entorno_actual = entorno_actual->padre;
-                
-                /* Opcional: Podés liberar la memoria de 'viejo' aquí si querés */
-            }
-#line 1500 "y.tab.c"
+  case 14: /* instruccion: RETURN ';'  */
+#line 113 "parser.y"
+                        {
+                imprimir_indentacion();
+                fprintf(yyout_py, "return\n");
+           }
+#line 1582 "y.tab.c"
     break;
 
-  case 16: /* declaracion: prefijo_declaracion declarar_lista_ids ';'  */
-#line 93 "parser.y"
+  case 15: /* declaracion: prefijo_declaracion declarar_lista_ids ';'  */
+#line 119 "parser.y"
                                                          { es_constante_actual = 0; }
-#line 1506 "y.tab.c"
+#line 1588 "y.tab.c"
     break;
 
-  case 17: /* declaracion: CONST declarar_lista_ids ';'  */
-#line 94 "parser.y"
+  case 16: /* declaracion: CONST declarar_lista_ids ';'  */
+#line 120 "parser.y"
                                            {
                 printf("[Error de Sintaxis] Línea %d: Definiste una constante pero omitiste el tipo de dato (ej: const int ...).\n", yylineno);
             }
-#line 1514 "y.tab.c"
+#line 1596 "y.tab.c"
     break;
 
-  case 22: /* prefijo_declaracion: tipo  */
-#line 106 "parser.y"
+  case 21: /* prefijo_declaracion: tipo  */
+#line 132 "parser.y"
                                        { es_constante_actual = 0; }
-#line 1520 "y.tab.c"
+#line 1602 "y.tab.c"
     break;
 
-  case 23: /* prefijo_declaracion: CONST tipo  */
-#line 107 "parser.y"
+  case 22: /* prefijo_declaracion: CONST tipo  */
+#line 133 "parser.y"
                                        { es_constante_actual = 1; }
-#line 1526 "y.tab.c"
+#line 1608 "y.tab.c"
     break;
 
-  case 24: /* tipo: INT  */
-#line 110 "parser.y"
+  case 23: /* tipo: INT  */
+#line 136 "parser.y"
               { tipo_actual = T_INT; }
-#line 1532 "y.tab.c"
+#line 1614 "y.tab.c"
     break;
 
-  case 25: /* tipo: FLOAT  */
-#line 111 "parser.y"
+  case 24: /* tipo: FLOAT  */
+#line 137 "parser.y"
              { tipo_actual = T_FLOAT; }
-#line 1538 "y.tab.c"
+#line 1620 "y.tab.c"
     break;
 
-  case 26: /* tipo: CHAR  */
-#line 112 "parser.y"
+  case 25: /* tipo: CHAR  */
+#line 138 "parser.y"
              { tipo_actual = T_CHAR; }
-#line 1544 "y.tab.c"
+#line 1626 "y.tab.c"
     break;
 
-  case 27: /* tipo: DOUBLE  */
-#line 113 "parser.y"
+  case 26: /* tipo: DOUBLE  */
+#line 139 "parser.y"
              { tipo_actual = T_DOUBLE; }
-#line 1550 "y.tab.c"
+#line 1632 "y.tab.c"
     break;
 
-  case 28: /* declarar_lista_ids: ID  */
-#line 116 "parser.y"
+  case 27: /* declarar_lista_ids: ID  */
+#line 142 "parser.y"
                         {
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[0].nombre));
                 if (entrada == NULL){
@@ -1558,20 +1640,18 @@ yyreduce:
                 } else {
                     entrada->tipo_base = tipo_actual;
                     entrada->id_entorno_declarado = entorno_actual->id_entorno;
-
                     if(es_constante_actual == 1) entrada->es_constante = 1;
 
-                    // --- GENERACIÓN DE CÓDIGO PYTHON ---
-                    imprimir_indentacion(); // <-- Cada uno imprime su espacio al inicio
+                    imprimir_indentacion();
                     fprintf(yyout_py, "%s_%d = None\n", (yyvsp[0].nombre), entorno_actual->id_entorno);
                 }
                 free((yyvsp[0].nombre));
          }
-#line 1571 "y.tab.c"
+#line 1651 "y.tab.c"
     break;
 
-  case 29: /* declarar_lista_ids: declarar_lista_ids ',' ID  */
-#line 132 "parser.y"
+  case 28: /* declarar_lista_ids: declarar_lista_ids ',' ID  */
+#line 156 "parser.y"
                                      {
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[0].nombre));
                 if (entrada == NULL){
@@ -1579,154 +1659,178 @@ yyreduce:
                 } else {
                     entrada->tipo_base = tipo_actual;
                     entrada->id_entorno_declarado = entorno_actual->id_entorno;
-
                     if(es_constante_actual == 1) entrada->es_constante = 1;
                     
-                    // --- GENERACIÓN DE CÓDIGO PYTHON ---
-                    imprimir_indentacion(); // <-- Indentamos
+                    imprimir_indentacion(); 
                     fprintf(yyout_py, "%s_%d = None\n", (yyvsp[0].nombre), entorno_actual->id_entorno);
                 }
                 free((yyvsp[0].nombre));
          }
-#line 1592 "y.tab.c"
+#line 1670 "y.tab.c"
     break;
 
-  case 30: /* declarar_lista_ids: ID '=' expresion  */
-#line 148 "parser.y"
+  case 29: /* declarar_lista_ids: ID '=' expresion  */
+#line 170 "parser.y"
                             {
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[-2].nombre));
                 if (entrada == NULL){
                     printf("Error semántico: la variable '%s' ya fue declarada.\n", (yyvsp[-2].nombre));
                 } else {
                     entrada->tipo_base = tipo_actual;
-                    // ¡OJO! Te faltaba esta línea fundamental para que el while sepa su ID real:
                     entrada->id_entorno_declarado = entorno_actual->id_entorno; 
-
                     if(es_constante_actual == 1) entrada->es_constante = 1;
                     
-                    // --- GENERACIÓN DE CÓDIGO PYTHON ---
-                    imprimir_indentacion(); // <-- Indentamos
+                    // Comprobación de tipos: verificar que la expresión sea compatible
+                    verificar_compatibilidad_tipos(tipo_actual, (yyvsp[0].info_expr)->tipo_dato, (yyvsp[-2].nombre), yylineno);
+
+                    imprimir_indentacion();
                     fprintf(yyout_py, "%s_%d = %s\n", (yyvsp[-2].nombre), entorno_actual->id_entorno, (yyvsp[0].info_expr)->codigo);
                 }
                 free((yyvsp[-2].nombre));
          }
-#line 1614 "y.tab.c"
+#line 1692 "y.tab.c"
     break;
 
-  case 31: /* declarar_lista_ids: declarar_lista_ids ',' ID '=' expresion  */
-#line 165 "parser.y"
+  case 30: /* declarar_lista_ids: declarar_lista_ids ',' ID '=' expresion  */
+#line 187 "parser.y"
                                                    {
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[-2].nombre));
                 if (entrada == NULL){
                     printf("Error semántico: la variable '%s' ya fue declarada.\n", (yyvsp[-2].nombre));
                 } else {
                     entrada->tipo_base = tipo_actual;
-                    // ¡OJO! Aquí también te faltaba:
                     entrada->id_entorno_declarado = entorno_actual->id_entorno;
-
                     if(es_constante_actual == 1) entrada->es_constante = 1;
+
+                    // Comprobación de tipos: verificar que la expresión sea compatible
+                    verificar_compatibilidad_tipos(tipo_actual, (yyvsp[0].info_expr)->tipo_dato, (yyvsp[-2].nombre), yylineno);
                     
-                    
-                    imprimir_indentacion(); // Indentamos
+                    imprimir_indentacion(); 
                     fprintf(yyout_py, "%s_%d = %s\n", (yyvsp[-2].nombre), entorno_actual->id_entorno, (yyvsp[0].info_expr)->codigo);
                 }
                 free((yyvsp[-2].nombre));
          }
-#line 1636 "y.tab.c"
+#line 1714 "y.tab.c"
     break;
 
-  case 34: /* asignacion_unitaria: ID '=' expresion  */
-#line 188 "parser.y"
+  case 33: /* asignacion_unitaria: ID '=' expresion  */
+#line 210 "parser.y"
                                        {
                         struct entrada_tabla *entrada = buscar_variable((yyvsp[-2].nombre));
                         if (entrada == NULL){
                             printf("Error semántico: la variable '%s' no existe.\n", (yyvsp[-2].nombre));
                         } else {
+                            // Comprobación de tipos en reasignación
+                            if (!entrada->es_funcion) {
+                                verificar_compatibilidad_tipos(entrada->tipo_base, (yyvsp[0].info_expr)->tipo_dato, entrada->nombre, yylineno);
+                            }
+                            // Verificar que no se asigne a una constante
+                            if (entrada->es_constante) {
+                                printf("[Error de Tipos] Línea %d: No se puede reasignar la constante '%s'.\n", yylineno, entrada->nombre);
+                            }
                             imprimir_indentacion();
                             fprintf(yyout_py, "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, (yyvsp[0].info_expr)->codigo);
                         }
-                        free((yyvsp[-2].nombre)); free((yyvsp[0].info_expr));
+                        free((yyvsp[-2].nombre)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
                     }
-#line 1651 "y.tab.c"
+#line 1737 "y.tab.c"
+    break;
+
+  case 34: /* asignacion_unitaria: ID accesos_array '=' expresion  */
+#line 229 "parser.y"
+                                                     {
+                        struct entrada_tabla *entrada = buscar_variable((yyvsp[-3].nombre));
+                        if (entrada == NULL){
+                            printf("Error semántico: la variable array '%s' no existe.\n", (yyvsp[-3].nombre));
+                        } else {
+                            imprimir_indentacion();
+                            // El nombre de python + los corchetes
+                            fprintf(yyout_py, "%s_%d%s = %s\n", entrada->nombre, entrada->id_entorno_declarado, (yyvsp[-2].nombre), (yyvsp[0].info_expr)->codigo);
+                        }
+                        free((yyvsp[-3].nombre)); free((yyvsp[-2].nombre)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+                    }
+#line 1753 "y.tab.c"
     break;
 
   case 35: /* asignacion_unitaria: ID '+' '+'  */
-#line 198 "parser.y"
+#line 240 "parser.y"
                                {
                         struct entrada_tabla *entrada = buscar_variable((yyvsp[-2].nombre));
-                        if (entrada == NULL){
-                            printf("Error semántico: la variable '%s' no existe.\n", (yyvsp[-2].nombre));
-                        } else {
-                            imprimir_indentacion();
-                            fprintf(yyout_py, "%s_%d += 1\n", entrada->nombre, entrada->id_entorno_declarado);
-                        }
+                        if (entrada == NULL) printf("Error semántico.\n");
+                        else { imprimir_indentacion(); fprintf(yyout_py, "%s_%d += 1\n", entrada->nombre, entrada->id_entorno_declarado); }
                         free((yyvsp[-2].nombre));
                     }
-#line 1666 "y.tab.c"
+#line 1764 "y.tab.c"
     break;
 
   case 36: /* asignacion_unitaria: ID '-' '-'  */
-#line 208 "parser.y"
+#line 246 "parser.y"
                                {
                         struct entrada_tabla *entrada = buscar_variable((yyvsp[-2].nombre));
-                        if (entrada == NULL){
-                            printf("Error semántico: la variable '%s' no existe.\n", (yyvsp[-2].nombre));
-                        } else {
-                            imprimir_indentacion();
-                            fprintf(yyout_py, "%s_%d -= 1\n", entrada->nombre, entrada->id_entorno_declarado);
-                        }
+                        if (entrada == NULL) printf("Error semántico.\n");
+                        else { imprimir_indentacion(); fprintf(yyout_py, "%s_%d -= 1\n", entrada->nombre, entrada->id_entorno_declarado); }
                         free((yyvsp[-2].nombre));
                     }
-#line 1681 "y.tab.c"
+#line 1775 "y.tab.c"
     break;
 
   case 37: /* asignacion_unitaria: '+' '+' ID  */
-#line 218 "parser.y"
+#line 252 "parser.y"
                                {
                         struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
-                        if (entrada == NULL){
-                            printf("Error semántico: la variable '%s' no existe.\n", (yyvsp[0].nombre));
-                        } else {
-                            imprimir_indentacion();
-                            fprintf(yyout_py, "%s_%d += 1\n", entrada->nombre, entrada->id_entorno_declarado);
-                        }
+                        if (entrada == NULL) printf("Error semántico.\n");
+                        else { imprimir_indentacion(); fprintf(yyout_py, "%s_%d += 1\n", entrada->nombre, entrada->id_entorno_declarado); }
                         free((yyvsp[0].nombre));
                     }
-#line 1696 "y.tab.c"
+#line 1786 "y.tab.c"
     break;
 
   case 38: /* asignacion_unitaria: '-' '-' ID  */
-#line 228 "parser.y"
+#line 258 "parser.y"
                                {
                         struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
-                        if (entrada == NULL){
-                            printf("Error semántico: la variable '%s' no existe.\n", (yyvsp[0].nombre));
-                        } else {
-                            imprimir_indentacion();
-                            fprintf(yyout_py, "%s_%d -= 1\n", entrada->nombre, entrada->id_entorno_declarado);
-                        }
+                        if (entrada == NULL) printf("Error semántico.\n");
+                        else { imprimir_indentacion(); fprintf(yyout_py, "%s_%d -= 1\n", entrada->nombre, entrada->id_entorno_declarado); }
                         free((yyvsp[0].nombre));
                     }
-#line 1711 "y.tab.c"
+#line 1797 "y.tab.c"
     break;
 
   case 39: /* asignacion_unitaria: ID  */
-#line 238 "parser.y"
+#line 264 "parser.y"
                          {
                         struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
-                        if (entrada == NULL){
-                            printf("Error semántico: la variable '%s' no existe.\n", (yyvsp[0].nombre));
-                        } else {
-                            imprimir_indentacion();
-                            fprintf(yyout_py, "%s_%d\n", entrada->nombre, entrada->id_entorno_declarado);
-                        }
+                        if (entrada == NULL) printf("Error semántico.\n");
+                        else { imprimir_indentacion(); fprintf(yyout_py, "%s_%d\n", entrada->nombre, entrada->id_entorno_declarado); }
                         free((yyvsp[0].nombre));
                     }
-#line 1726 "y.tab.c"
+#line 1808 "y.tab.c"
     break;
 
-  case 40: /* $@2: %empty  */
-#line 250 "parser.y"
+  case 40: /* accesos_array: '[' expresion ']'  */
+#line 273 "parser.y"
+                                  {
+                    char buf[256];
+                    sprintf(buf, "[%s]", (yyvsp[-1].info_expr)->codigo);
+                    (yyval.nombre) = strdup(buf);
+                    free((yyvsp[-1].info_expr)->codigo); free((yyvsp[-1].info_expr));
+                }
+#line 1819 "y.tab.c"
+    break;
+
+  case 41: /* accesos_array: accesos_array '[' expresion ']'  */
+#line 279 "parser.y"
+                                                {
+                    char buf[512];
+                    sprintf(buf, "%s[%s]", (yyvsp[-3].nombre), (yyvsp[-1].info_expr)->codigo);
+                    (yyval.nombre) = strdup(buf);
+                    free((yyvsp[-3].nombre)); free((yyvsp[-1].info_expr)->codigo); free((yyvsp[-1].info_expr));
+                }
+#line 1830 "y.tab.c"
+    break;
+
+  case 42: /* $@2: %empty  */
+#line 287 "parser.y"
            {
             struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
             nuevo->tabla_simbolos = NULL; nuevo->cantidad_simbolos = 0; nuevo->capacidad_tabla = 0;
@@ -1734,188 +1838,112 @@ yyreduce:
             nuevo->id_entorno = contador_entornos++;
             entorno_actual = nuevo;   
 }
-#line 1738 "y.tab.c"
+#line 1842 "y.tab.c"
     break;
 
-  case 41: /* loop: FOR $@2 '(' for_init condicion_loop ';' loop_consecuencia ')' '{' instrucciones '}'  */
-#line 256 "parser.y"
+  case 43: /* loop: FOR $@2 '(' for_init condicion_loop ';' loop_consecuencia ')' '{' instrucciones '}'  */
+#line 293 "parser.y"
                                                                          {
             if ((yyvsp[-4].nombre) && strlen((yyvsp[-4].nombre)) > 0) {
                 imprimir_indentacion();
                 fprintf(yyout_py, "%s", (yyvsp[-4].nombre));
                 free((yyvsp[-4].nombre));
             }
-
-            nivel_indentacion--; // Bajamos la indentación de Python
-
-            /* 2. Destruimos el entorno local del loop */
+            nivel_indentacion--; 
             struct Entorno *viejo = entorno_actual;
             entorno_actual = entorno_actual->padre;
             free(viejo);
     }
-#line 1757 "y.tab.c"
+#line 1858 "y.tab.c"
     break;
 
-  case 42: /* loop: WHILE '(' condicion_loop ')' '{' instrucciones '}'  */
-#line 270 "parser.y"
+  case 44: /* loop: WHILE '(' condicion_loop ')' '{' instrucciones '}'  */
+#line 304 "parser.y"
                                                         {    
         nivel_indentacion--;
     }
-#line 1765 "y.tab.c"
+#line 1866 "y.tab.c"
     break;
 
-  case 43: /* condicion_loop: expresion '=' expresion  */
-#line 276 "parser.y"
+  case 45: /* condicion_loop: expresion '=' expresion  */
+#line 309 "parser.y"
                                          {
                     imprimir_indentacion();
                     printf("Error: aunque C acepte la forma loop('expresion = expresion'), python no lo hace, por favor, correjir la línea %d.\n", yylineno);
                     fprintf(yyout_py, "while %s = %s:\n", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
                     nivel_indentacion++;
-                    free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr));
-            }
-#line 1777 "y.tab.c"
-    break;
-
-  case 44: /* condicion_loop: expresion '>' expresion  */
-#line 283 "parser.y"
-                                         {
-                    imprimir_indentacion();
-                    fprintf(yyout_py, "while %s > %s:\n", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
-                    nivel_indentacion++;
-                    free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr));
-            }
-#line 1788 "y.tab.c"
-    break;
-
-  case 45: /* condicion_loop: expresion '<' expresion  */
-#line 289 "parser.y"
-                                         {
-                    imprimir_indentacion();
-                    fprintf(yyout_py, "while %s < %s:\n", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
-                    nivel_indentacion++;
-                    free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr));
-            }
-#line 1799 "y.tab.c"
-    break;
-
-  case 46: /* condicion_loop: expresion MAYOR_IGUAL expresion  */
-#line 295 "parser.y"
-                                                 {
-                    imprimir_indentacion();
-                    fprintf(yyout_py, "while %s >= %s:\n", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
-                    nivel_indentacion++;
                     free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
             }
-#line 1810 "y.tab.c"
+#line 1878 "y.tab.c"
     break;
 
-  case 47: /* condicion_loop: expresion MENOR_IGUAL expresion  */
-#line 301 "parser.y"
-                                                 { // NUMERO '<=' ID
-                    imprimir_indentacion();
-                    fprintf(yyout_py, "while %s <= %s:\n", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
-                    nivel_indentacion++;
-                    free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
-            }
-#line 1821 "y.tab.c"
-    break;
-
-  case 48: /* condicion_loop: expresion IGUAL_IGUAL expresion  */
-#line 307 "parser.y"
-                                                 {
-                    imprimir_indentacion();
-                    fprintf(yyout_py, "while %s == %s:\n", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
-                    nivel_indentacion++;
-                    free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
-            }
-#line 1832 "y.tab.c"
-    break;
-
-  case 49: /* condicion_loop: expresion  */
-#line 313 "parser.y"
-                        {
+  case 46: /* condicion_loop: expresion  */
+#line 316 "parser.y"
+                           {
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s:\n", (yyvsp[0].info_expr)->codigo);
                     nivel_indentacion++;
                     free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
             }
-#line 1843 "y.tab.c"
-    break;
-
-  case 50: /* loop_consecuencia: ID  */
-#line 321 "parser.y"
-                      {
-                    struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
-                if (entrada == NULL){
-                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", (yyvsp[0].nombre));
-                    (yyval.nombre) = strdup("");
-                } else {
-                    (yyval.nombre) = strdup("");
-                }
-            }
-#line 1857 "y.tab.c"
-    break;
-
-  case 51: /* loop_consecuencia: ID '+' '+'  */
-#line 330 "parser.y"
-                           {
-                    struct entrada_tabla *entrada = buscar_variable((yyvsp[-2].nombre));
-                if (entrada == NULL){
-                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", (yyvsp[-2].nombre));
-                    (yyval.nombre) = strdup("");
-                } else {
-                    char buf[256];
-                    snprintf(buf, sizeof(buf), "%s_%d += 1\n", entrada->nombre, entrada->id_entorno_declarado);
-                    (yyval.nombre) = strdup(buf);
-                }
-                }
-#line 1873 "y.tab.c"
-    break;
-
-  case 52: /* loop_consecuencia: '-' '-' ID  */
-#line 341 "parser.y"
-                            {
-                        struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
-                if (entrada == NULL){
-                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", (yyvsp[0].nombre));
-                    (yyval.nombre) = strdup("");
-                } else {
-                    char buf[256];
-                    snprintf(buf, sizeof(buf), "%s_%d -= 1\n", entrada->nombre, entrada->id_entorno_declarado);
-                    (yyval.nombre) = strdup(buf);
-                }
-                }
 #line 1889 "y.tab.c"
     break;
 
-  case 53: /* loop_consecuencia: ID '=' expresion  */
-#line 352 "parser.y"
+  case 47: /* loop_consecuencia: ID  */
+#line 324 "parser.y"
+                      { (yyval.nombre) = strdup(""); }
+#line 1895 "y.tab.c"
+    break;
+
+  case 48: /* loop_consecuencia: ID '+' '+'  */
+#line 325 "parser.y"
+                           {
+                    struct entrada_tabla *entrada = buscar_variable((yyvsp[-2].nombre));
+                    if (entrada != NULL){
+                        char buf[256];
+                        snprintf(buf, sizeof(buf), "%s_%d += 1\n", entrada->nombre, entrada->id_entorno_declarado);
+                        (yyval.nombre) = strdup(buf);
+                    } else (yyval.nombre) = strdup("");
+                }
+#line 1908 "y.tab.c"
+    break;
+
+  case 49: /* loop_consecuencia: '-' '-' ID  */
+#line 333 "parser.y"
+                            {
+                    struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
+                    if (entrada != NULL){
+                        char buf[256];
+                        snprintf(buf, sizeof(buf), "%s_%d -= 1\n", entrada->nombre, entrada->id_entorno_declarado);
+                        (yyval.nombre) = strdup(buf);
+                    } else (yyval.nombre) = strdup("");
+                }
+#line 1921 "y.tab.c"
+    break;
+
+  case 50: /* loop_consecuencia: ID '=' expresion  */
+#line 341 "parser.y"
                                    {
                     struct entrada_tabla *entrada = buscar_variable((yyvsp[-2].nombre));
-                    if (entrada == NULL){
-                        printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", (yyvsp[-2].nombre));
-                        (yyval.nombre) = strdup("");
-                    } else {
+                    if (entrada != NULL){
                         char buf[512];
                         snprintf(buf, sizeof(buf), "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, (yyvsp[0].info_expr)->codigo);
                         (yyval.nombre) = strdup(buf);
-                    }
+                    } else (yyval.nombre) = strdup("");
                     free((yyvsp[-2].nombre)); free((yyvsp[0].info_expr));
                 }
-#line 1906 "y.tab.c"
+#line 1935 "y.tab.c"
     break;
 
-  case 54: /* expresion: ID  */
-#line 366 "parser.y"
+  case 51: /* expresion: ID  */
+#line 352 "parser.y"
                {
                 (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
                 struct entrada_tabla *entrada = buscar_variable((yyvsp[0].nombre));
                 if (entrada == NULL) {
                     printf("Error semántico: '%s' no declarada.\n", (yyvsp[0].nombre));
                     (yyval.info_expr)->codigo = strdup((yyvsp[0].nombre)); 
-                    (yyval.info_expr)->tipo_dato = T_INT; // Asumimos INT por defecto si hay error
+                    (yyval.info_expr)->tipo_dato = T_INT; 
                 } else {
-                    // Si existe, generamos su nombre real de Python con su entorno: ej "i_1"
                     char buf[100];
                     sprintf(buf, "%s_%d", entrada->nombre, entrada->id_entorno_declarado);
                     (yyval.info_expr)->codigo = strdup(buf);
@@ -1923,468 +1951,681 @@ yyreduce:
                 }
                 free((yyvsp[0].nombre));
           }
-#line 1927 "y.tab.c"
+#line 1955 "y.tab.c"
     break;
 
-  case 55: /* expresion: NUMERO  */
-#line 382 "parser.y"
+  case 52: /* expresion: ID accesos_array  */
+#line 368 "parser.y"
+                             {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
+                struct entrada_tabla *entrada = buscar_variable((yyvsp[-1].nombre));
+                if (entrada == NULL) {
+                    printf("Error semántico: '%s' (array) no declarada.\n", (yyvsp[-1].nombre));
+                    (yyval.info_expr)->codigo = strdup((yyvsp[-1].nombre)); 
+                    (yyval.info_expr)->tipo_dato = T_INT;
+                } else {
+                    char buf[512];
+                    sprintf(buf, "%s_%d%s", entrada->nombre, entrada->id_entorno_declarado, (yyvsp[0].nombre));
+                    (yyval.info_expr)->codigo = strdup(buf);
+                    (yyval.info_expr)->tipo_dato = entrada->tipo_base;
+                }
+                free((yyvsp[-1].nombre)); free((yyvsp[0].nombre));
+          }
+#line 1975 "y.tab.c"
+    break;
+
+  case 53: /* expresion: llamada_funcion_expr  */
+#line 384 "parser.y"
+                                 {
+                (yyval.info_expr) = (yyvsp[0].info_expr);
+          }
+#line 1983 "y.tab.c"
+    break;
+
+  case 54: /* expresion: NUMERO  */
+#line 387 "parser.y"
                    {
-            (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
                 char buf[50];
                 sprintf(buf, "%g", (yyvsp[0].val_num));
                 (yyval.info_expr)->codigo = strdup(buf);
-                (yyval.info_expr)->tipo_dato = T_INT; // <-- ¡Faltaba esto!
+                /* --- NUEVO PUNTO 5: Si el string tiene un punto, es float --- */
+                if (strchr(buf, '.') != NULL) {
+                    (yyval.info_expr)->tipo_dato = T_FLOAT;
+                } else {
+                    (yyval.info_expr)->tipo_dato = T_INT;
+                }
           }
-#line 1939 "y.tab.c"
+#line 2000 "y.tab.c"
     break;
 
-  case 56: /* expresion: expresion '+' expresion  */
-#line 389 "parser.y"
+  case 55: /* expresion: expresion '+' expresion  */
+#line 399 "parser.y"
                                     {
                 (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
                 char buf[256];
                 sprintf(buf, "%s + %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
                 (yyval.info_expr)->codigo = strdup(buf);
-                if ((yyvsp[-2].info_expr)->tipo_dato != (yyvsp[0].info_expr)->tipo_dato) {
-                        printf("[Error Semántico] Línea %d: Tipos incompatibles en la suma.\n", yylineno);
-                }
-                // 3. Heredamos el tipo (Asumimos que si llegamos acá el resultado es del mismo tipo)
-                (yyval.info_expr)->tipo_dato = (yyvsp[-2].info_expr)->tipo_dato; // <-- ¡Faltaba esto!
-                
-                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr));
-                free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+                /* --- NUEVO PUNTO 2: Promoción de tipos automática --- */
+                (yyval.info_expr)->tipo_dato = max_tipo((yyvsp[-2].info_expr)->tipo_dato, (yyvsp[0].info_expr)->tipo_dato); 
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
           }
-#line 1958 "y.tab.c"
+#line 2014 "y.tab.c"
     break;
 
-  case 57: /* expresion: expresion '-' expresion  */
-#line 403 "parser.y"
+  case 56: /* expresion: expresion '-' expresion  */
+#line 408 "parser.y"
                                     {
                 (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
                 char buf[256];
                 sprintf(buf, "%s - %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
                 (yyval.info_expr)->codigo = strdup(buf);
-                
-                if ((yyvsp[-2].info_expr)->tipo_dato != (yyvsp[0].info_expr)->tipo_dato) {
-                    printf("[Error Semántico] Línea %d: Tipos incompatibles en la resta.\n", yylineno);
-                }
-                
-                (yyval.info_expr)->tipo_dato = (yyvsp[-2].info_expr)->tipo_dato;
-                
-                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr));
-                free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+                (yyval.info_expr)->tipo_dato = max_tipo((yyvsp[-2].info_expr)->tipo_dato, (yyvsp[0].info_expr)->tipo_dato);
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
           }
-#line 1978 "y.tab.c"
+#line 2027 "y.tab.c"
     break;
 
-  case 58: /* expresion: expresion '*' expresion  */
-#line 418 "parser.y"
+  case 57: /* expresion: expresion '*' expresion  */
+#line 416 "parser.y"
                                     {
                 (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
                 char buf[256];
                 sprintf(buf, "%s * %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
                 (yyval.info_expr)->codigo = strdup(buf);
-                
-                if ((yyvsp[-2].info_expr)->tipo_dato != (yyvsp[0].info_expr)->tipo_dato) {
-                    printf("[Error Semántico] Línea %d: Tipos incompatibles en la multiplicación.\n", yylineno);
-                }
-                
-                (yyval.info_expr)->tipo_dato = (yyvsp[-2].info_expr)->tipo_dato;
-                
-                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr));
-                free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+                (yyval.info_expr)->tipo_dato = max_tipo((yyvsp[-2].info_expr)->tipo_dato, (yyvsp[0].info_expr)->tipo_dato);
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
           }
-#line 1998 "y.tab.c"
+#line 2040 "y.tab.c"
     break;
 
-  case 59: /* expresion: '(' expresion ')'  */
+  case 58: /* expresion: expresion '/' expresion  */
+#line 425 "parser.y"
+                                    {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
+                char buf[256];
+                sprintf(buf, "%s / %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
+                (yyval.info_expr)->codigo = strdup(buf);
+                (yyval.info_expr)->tipo_dato = max_tipo((yyvsp[-2].info_expr)->tipo_dato, (yyvsp[0].info_expr)->tipo_dato);
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+          }
+#line 2053 "y.tab.c"
+    break;
+
+  case 59: /* expresion: expresion '%' expresion  */
 #line 433 "parser.y"
+                                    {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
+                char buf[256];
+                sprintf(buf, "%s %% %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
+                (yyval.info_expr)->codigo = strdup(buf);
+                (yyval.info_expr)->tipo_dato = T_INT;
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+          }
+#line 2066 "y.tab.c"
+    break;
+
+  case 60: /* expresion: expresion AND expresion  */
+#line 441 "parser.y"
+                                    {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
+                char buf[256];
+                sprintf(buf, "%s and %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo); // Traduccion a python "and"
+                (yyval.info_expr)->codigo = strdup(buf);
+                (yyval.info_expr)->tipo_dato = T_INT;
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+          }
+#line 2079 "y.tab.c"
+    break;
+
+  case 61: /* expresion: expresion OR expresion  */
+#line 449 "parser.y"
+                                   {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
+                char buf[256];
+                sprintf(buf, "%s or %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo); // Traduccion a python "or"
+                (yyval.info_expr)->codigo = strdup(buf);
+                (yyval.info_expr)->tipo_dato = T_INT;
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+          }
+#line 2092 "y.tab.c"
+    break;
+
+  case 62: /* expresion: '!' expresion  */
+#line 457 "parser.y"
+                          {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
+                char buf[256];
+                sprintf(buf, "not %s", (yyvsp[0].info_expr)->codigo); // Traduccion a python "not"
+                (yyval.info_expr)->codigo = strdup(buf);
+                (yyval.info_expr)->tipo_dato = T_INT;
+                free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+          }
+#line 2105 "y.tab.c"
+    break;
+
+  case 63: /* expresion: expresion '>' expresion  */
+#line 465 "parser.y"
+                                    {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion)); char buf[256];
+                sprintf(buf, "%s > %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo); (yyval.info_expr)->codigo = strdup(buf); (yyval.info_expr)->tipo_dato = T_INT;
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+          }
+#line 2115 "y.tab.c"
+    break;
+
+  case 64: /* expresion: expresion '<' expresion  */
+#line 470 "parser.y"
+                                    {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion)); char buf[256];
+                sprintf(buf, "%s < %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo); (yyval.info_expr)->codigo = strdup(buf); (yyval.info_expr)->tipo_dato = T_INT;
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+          }
+#line 2125 "y.tab.c"
+    break;
+
+  case 65: /* expresion: expresion IGUAL_IGUAL expresion  */
+#line 475 "parser.y"
+                                            {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion)); char buf[256];
+                sprintf(buf, "%s == %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo); (yyval.info_expr)->codigo = strdup(buf); (yyval.info_expr)->tipo_dato = T_INT;
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+          }
+#line 2135 "y.tab.c"
+    break;
+
+  case 66: /* expresion: expresion NO_IGUAL expresion  */
+#line 480 "parser.y"
+                                         {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion)); char buf[256];
+                sprintf(buf, "%s != %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo); (yyval.info_expr)->codigo = strdup(buf); (yyval.info_expr)->tipo_dato = T_INT;
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+          }
+#line 2145 "y.tab.c"
+    break;
+
+  case 67: /* expresion: expresion MAYOR_IGUAL expresion  */
+#line 485 "parser.y"
+                                            {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion)); char buf[256];
+                sprintf(buf, "%s >= %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo); (yyval.info_expr)->codigo = strdup(buf); (yyval.info_expr)->tipo_dato = T_INT;
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+          }
+#line 2155 "y.tab.c"
+    break;
+
+  case 68: /* expresion: expresion MENOR_IGUAL expresion  */
+#line 490 "parser.y"
+                                            {
+                (yyval.info_expr) = malloc(sizeof(struct InfoExpresion)); char buf[256];
+                sprintf(buf, "%s <= %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo); (yyval.info_expr)->codigo = strdup(buf); (yyval.info_expr)->tipo_dato = T_INT;
+                free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+          }
+#line 2165 "y.tab.c"
+    break;
+
+  case 69: /* expresion: '(' expresion ')'  */
+#line 495 "parser.y"
                               {
                 (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
                 char buf[256];
                 sprintf(buf, "(%s)", (yyvsp[-1].info_expr)->codigo);
                 (yyval.info_expr)->codigo = strdup(buf);
-                
-                // Los paréntesis no cambian el tipo, solo lo pasan hacia arriba
                 (yyval.info_expr)->tipo_dato = (yyvsp[-1].info_expr)->tipo_dato; 
-                
                 free((yyvsp[-1].info_expr)->codigo); free((yyvsp[-1].info_expr));
           }
-#line 2014 "y.tab.c"
+#line 2178 "y.tab.c"
     break;
 
-  case 60: /* $@3: %empty  */
-#line 446 "parser.y"
+  case 70: /* $@3: %empty  */
+#line 505 "parser.y"
                           {
             imprimir_indentacion();
             fprintf(yyout_py, "if ");
         }
-#line 2023 "y.tab.c"
+#line 2187 "y.tab.c"
     break;
 
-  case 61: /* $@4: %empty  */
-#line 449 "parser.y"
+  case 71: /* $@4: %empty  */
+#line 508 "parser.y"
                            {
             fprintf(yyout_py, ":\n");
             nivel_indentacion++;
         }
-#line 2032 "y.tab.c"
+#line 2196 "y.tab.c"
     break;
 
-  case 62: /* $@5: %empty  */
-#line 452 "parser.y"
+  case 72: /* $@5: %empty  */
+#line 511 "parser.y"
                                 { 
             nivel_indentacion--;
         }
-#line 2040 "y.tab.c"
+#line 2204 "y.tab.c"
     break;
 
-  case 64: /* $@6: %empty  */
-#line 455 "parser.y"
+  case 74: /* $@6: %empty  */
+#line 514 "parser.y"
                                    {
             
         }
-#line 2048 "y.tab.c"
+#line 2212 "y.tab.c"
     break;
 
-  case 65: /* $@7: %empty  */
-#line 457 "parser.y"
+  case 75: /* $@7: %empty  */
+#line 516 "parser.y"
              {
-            /*if($1 == float){
-                printf("Error, prohibida sintaxis para switch, la expresion debe ser entera, arreglar linea %d\n", yylineno);
-             } TODO cambiar esto cuando ya tengamos un verificador de tipos*/ 
             imprimir_indentacion();
             fprintf(yyout_py, "match %s:\n", (yyvsp[-3].info_expr)->codigo);
             nivel_indentacion++;
             free((yyvsp[-3].info_expr));
         }
-#line 2062 "y.tab.c"
+#line 2223 "y.tab.c"
     break;
 
-  case 66: /* condicionales: SWITCH '(' expresion ')' $@6 '{' $@7 switch_cases '}'  */
-#line 465 "parser.y"
+  case 76: /* condicionales: SWITCH '(' expresion ')' $@6 '{' $@7 switch_cases '}'  */
+#line 521 "parser.y"
                            {
             nivel_indentacion--;
         }
-#line 2070 "y.tab.c"
+#line 2231 "y.tab.c"
     break;
 
-  case 67: /* $@8: %empty  */
-#line 470 "parser.y"
+  case 77: /* $@8: %empty  */
+#line 526 "parser.y"
                              { 
-                // Traducimos el 'else if' de C al 'elif' de Python
                 imprimir_indentacion(); 
                 fprintf(yyout_py, "elif "); 
            }
-#line 2080 "y.tab.c"
+#line 2240 "y.tab.c"
     break;
 
-  case 68: /* $@9: %empty  */
-#line 475 "parser.y"
+  case 78: /* $@9: %empty  */
+#line 530 "parser.y"
                             { 
                 fprintf(yyout_py, ":\n"); 
                 nivel_indentacion++;
            }
-#line 2089 "y.tab.c"
+#line 2249 "y.tab.c"
     break;
 
-  case 69: /* $@10: %empty  */
-#line 479 "parser.y"
+  case 79: /* $@10: %empty  */
+#line 534 "parser.y"
                                  {
                 nivel_indentacion--;
            }
-#line 2097 "y.tab.c"
+#line 2257 "y.tab.c"
     break;
 
-  case 71: /* $@11: %empty  */
-#line 483 "parser.y"
+  case 81: /* $@11: %empty  */
+#line 538 "parser.y"
                 { 
-                // El caso base de cierre: un 'else:' simple
                 imprimir_indentacion(); 
                 fprintf(yyout_py, "else:\n"); 
                 nivel_indentacion++;
            }
-#line 2108 "y.tab.c"
+#line 2267 "y.tab.c"
     break;
 
-  case 72: /* bloque_else: ELSE $@11 '{' instrucciones '}'  */
-#line 489 "parser.y"
+  case 82: /* bloque_else: ELSE $@11 '{' instrucciones '}'  */
+#line 543 "parser.y"
                                  {
                 nivel_indentacion--;
            }
-#line 2116 "y.tab.c"
+#line 2275 "y.tab.c"
     break;
 
-  case 74: /* $@12: %empty  */
-#line 496 "parser.y"
+  case 84: /* $@12: %empty  */
+#line 550 "parser.y"
                                     {
                     if (strchr((yyvsp[-1].info_expr)->codigo, '_') != NULL) {
                         printf("[Error Semántico] Línea %d: El valor del 'case' debe ser una constante, no una variable ('%s').\n", yylineno, (yyvsp[-1].info_expr)->codigo);
-                    } //si expresion trae un _ en su nombre, significa que es una variable, algo prohbido en c
+                    }
                     imprimir_indentacion();
                     fprintf(yyout_py, "case %s:\n", (yyvsp[-1].info_expr)->codigo);
-                    nivel_indentacion++; //subimos la indentación para las instrucciones de este case específico
+                    nivel_indentacion++; 
                     free((yyvsp[-1].info_expr));
     }
-#line 2130 "y.tab.c"
+#line 2289 "y.tab.c"
     break;
 
-  case 75: /* $@13: %empty  */
-#line 504 "parser.y"
+  case 85: /* $@13: %empty  */
+#line 558 "parser.y"
                               {
         nivel_indentacion--;
     }
-#line 2138 "y.tab.c"
+#line 2297 "y.tab.c"
     break;
 
-  case 77: /* $@14: %empty  */
-#line 507 "parser.y"
+  case 87: /* $@14: %empty  */
+#line 561 "parser.y"
                               {
-                    // Opcional: Agregamos soporte para el 'default:' de C -> 'case _:' de Python
                     imprimir_indentacion();
                     fprintf(yyout_py, "case _:\n");
                     nivel_indentacion++;
               }
-#line 2149 "y.tab.c"
+#line 2307 "y.tab.c"
     break;
 
-  case 78: /* switch_cases: DEFAULT ':' $@14 instrucciones  */
-#line 513 "parser.y"
+  case 88: /* switch_cases: DEFAULT ':' $@14 instrucciones  */
+#line 566 "parser.y"
                             {
                     nivel_indentacion--;
               }
-#line 2157 "y.tab.c"
+#line 2315 "y.tab.c"
     break;
 
-  case 79: /* switch_cases: error switch_cases  */
-#line 516 "parser.y"
+  case 89: /* switch_cases: error switch_cases  */
+#line 569 "parser.y"
                                      { 
-                    // Si algo falla dentro de un case, Bison limpia la pila 
-                    // hasta encontrar el inicio del Siguiente CASE o el cierre '}'
                     printf("[Error Sintáctico] Línea %d: 'case' mal formado o falta ';' tras el break.\n", yylineno);
-                    yyerrok; // Indica a Bison que ya retomamos el control
+                    yyerrok; 
               }
-#line 2168 "y.tab.c"
+#line 2324 "y.tab.c"
     break;
 
-  case 81: /* condicion_IF: expresion '=' expresion  */
-#line 526 "parser.y"
+  case 91: /* condicion_IF: expresion '=' expresion  */
+#line 576 "parser.y"
                                           {
-                    printf("Error: aunque C acepte la forma condicional('expresion = expresion'), python no lo hace, por favor, corregir la línea %d.\n", yylineno);
+                    printf("Error: aunque C acepte la forma condicional('expresion = expresion'), python no lo hace.\n");
                     fprintf(yyout_py, "%s = %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
-                    free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr));
-            }
-#line 2178 "y.tab.c"
-    break;
-
-  case 82: /* condicion_IF: expresion '>' expresion  */
-#line 531 "parser.y"
-                                         {
-                    fprintf(yyout_py, "%s > %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
-                    free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr));
-            }
-#line 2187 "y.tab.c"
-    break;
-
-  case 83: /* condicion_IF: expresion '<' expresion  */
-#line 535 "parser.y"
-                                         {
-                    fprintf(yyout_py, "%s < %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
-                    free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr));
-            }
-#line 2196 "y.tab.c"
-    break;
-
-  case 84: /* condicion_IF: expresion MAYOR_IGUAL expresion  */
-#line 539 "parser.y"
-                                                 {
-                    fprintf(yyout_py, "%s >= %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
                     free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
             }
-#line 2205 "y.tab.c"
+#line 2334 "y.tab.c"
     break;
 
-  case 85: /* condicion_IF: expresion MENOR_IGUAL expresion  */
-#line 543 "parser.y"
-                                                 { // NUMERO '<=' ID
-                    fprintf(yyout_py, "%s <= %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
-                    free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
-            }
-#line 2214 "y.tab.c"
-    break;
-
-  case 86: /* condicion_IF: expresion IGUAL_IGUAL expresion  */
-#line 547 "parser.y"
-                                                 {
-                    fprintf(yyout_py, "%s == %s", (yyvsp[-2].info_expr)->codigo, (yyvsp[0].info_expr)->codigo);
-                    free((yyvsp[-2].info_expr)->codigo); free((yyvsp[-2].info_expr)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
-            }
-#line 2223 "y.tab.c"
-    break;
-
-  case 87: /* condicion_IF: expresion  */
-#line 551 "parser.y"
-                        {
+  case 92: /* condicion_IF: expresion  */
+#line 581 "parser.y"
+                           {
                     fprintf(yyout_py, "%s", (yyvsp[0].info_expr)->codigo);
                     free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
             }
-#line 2232 "y.tab.c"
+#line 2343 "y.tab.c"
     break;
 
-  case 91: /* $@15: %empty  */
-#line 562 "parser.y"
-                                        { 
-                        // TRUCO: Imprimimos la coma y un espacio justo cuando Bison detecta el token ','
-                        fprintf(yyout_py, ", "); 
-                   }
-#line 2241 "y.tab.c"
+  case 96: /* $@15: %empty  */
+#line 592 "parser.y"
+                                        { fprintf(yyout_py, ", "); }
+#line 2349 "y.tab.c"
     break;
 
-  case 93: /* parametro_void: tipo ID  */
-#line 569 "parser.y"
-                         { //realmente es malo este nombre parametro_void, porque las funciones que no son void tambien usan esta gramatica, pero no se me ocurre un nombre bueno y que no sea largo, y tampoco importa tanto
+  case 98: /* parametro_void: tipo ID  */
+#line 595 "parser.y"
+                         { 
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[0].nombre));
                 if (entrada == NULL){
                     printf("Error semántico: la variable '%s' ya fue declarada.\n", (yyvsp[0].nombre));
                 } else {
                     entrada->tipo_base = tipo_actual;
                     entrada->id_entorno_declarado = entorno_actual->id_entorno;
-
+                    // Guardamos el tipo de este parámetro en el buffer de declaración
+                    if (contador_parametros < MAX_PARAMS)
+                        tipos_params_actuales[contador_parametros] = tipo_actual;
+                    contador_parametros++;
                     if(es_constante_actual == 1) entrada->es_constante = 1;
-
-                    // Imprimimos el nombre limpio directamente en Python, sin indentación extra
                     fprintf(yyout_py, "%s_%d", (yyvsp[0].nombre), entorno_actual->id_entorno);
                 }
                 free((yyvsp[0].nombre));
           }
-#line 2261 "y.tab.c"
+#line 2370 "y.tab.c"
     break;
 
-  case 94: /* $@16: %empty  */
-#line 586 "parser.y"
+  case 99: /* $@16: %empty  */
+#line 613 "parser.y"
                                       {
-                struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
-                nuevo->tabla_simbolos = NULL;
-                nuevo->cantidad_simbolos = 0;
-                nuevo->capacidad_tabla = 0;
-                nuevo->padre = entorno_actual;
-                nuevo->id_entorno = contador_entornos++; 
-                entorno_actual = nuevo; 
-                imprimir_indentacion();
-                fprintf(yyout_py, "def %s(", (yyvsp[-1].nombre));
-                free((yyvsp[-1].nombre));
+                struct entrada_tabla *entrada = declarar_variable((yyvsp[-1].nombre));
+                if (entrada == NULL){
+                    printf("Error semántico: la función '%s' ya fue declarada.\n", (yyvsp[-1].nombre));
+                } else {
+                    entrada->tipo_base = T_VOID;
+                    entrada->es_funcion = 1;
+                    struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
+                    nuevo->tabla_simbolos = NULL;
+                    nuevo->cantidad_simbolos = 0;
+                    nuevo->capacidad_tabla = 0;
+                    nuevo->padre = entorno_actual;
+                    nuevo->id_entorno = contador_entornos++; 
+                    entorno_actual = nuevo; 
+                    imprimir_indentacion();
+                    fprintf(yyout_py, "def %s(", (yyvsp[-1].nombre));
+                }
             }
-#line 2278 "y.tab.c"
+#line 2393 "y.tab.c"
     break;
 
-  case 95: /* $@17: %empty  */
-#line 597 "parser.y"
+  case 100: /* $@17: %empty  */
+#line 630 "parser.y"
                                                 {
+                struct entrada_tabla *entrada = buscar_variable((yyvsp[-4].nombre));
+                if (entrada == NULL){
+                    printf("Error semántico: la función '%s' no existe. Línea %d\n", (yyvsp[-4].nombre), yylineno);
+                } else {
+                    entrada->cantidad_parametros_funcion = contador_parametros;
+                    // Copiar el buffer de tipos al arreglo dinámico de la entrada
+                    if (contador_parametros > 0) {
+                        entrada->tipos_parametros = (int *) malloc(contador_parametros * sizeof(int));
+                        for (int i = 0; i < contador_parametros; i++)
+                            entrada->tipos_parametros[i] = tipos_params_actuales[i];
+                    }
+                    contador_parametros = 0;
+                    free((yyvsp[-4].nombre));
+                }
                 fprintf(yyout_py, "):\n");
                 nivel_indentacion++;
             }
-#line 2287 "y.tab.c"
+#line 2416 "y.tab.c"
     break;
 
-  case 96: /* funcion_void: VOID ID '(' $@16 declaracion_variables_funcion ')' $@17 '{' instrucciones '}'  */
-#line 600 "parser.y"
+  case 101: /* funcion_void: VOID ID '(' $@16 declaracion_variables_funcion ')' $@17 '{' instrucciones '}'  */
+#line 647 "parser.y"
                                     {
                 nivel_indentacion--;
                 struct Entorno *viejo = entorno_actual;
                 entorno_actual = entorno_actual->padre;
                 free(viejo);
             }
-#line 2298 "y.tab.c"
+#line 2427 "y.tab.c"
     break;
 
-  case 97: /* $@18: %empty  */
-#line 607 "parser.y"
-                                                        { //estaba 'tipo' en vez de prefijo_declaracion, quilombo era
+  case 102: /* $@18: %empty  */
+#line 655 "parser.y"
+                                                        {
                 struct entrada_tabla *entrada = declarar_variable((yyvsp[-1].nombre));
                 if (entrada == NULL){
-                    printf("Error semántico: la variable '%s' ya fue declarada.\n", (yyvsp[-1].nombre));
+                    printf("Error semántico: la función '%s' ya fue declarada.\n", (yyvsp[-1].nombre));
                 } else {
                     entrada->tipo_base = tipo_actual;
+                    entrada->es_funcion = 1;
                     entrada->id_entorno_declarado = entorno_actual->id_entorno;
-
                     if(es_constante_actual == 1) entrada->es_constante = 1;
                 }
                 struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
-                nuevo->tabla_simbolos = NULL;
-                nuevo->cantidad_simbolos = 0;
-                nuevo->capacidad_tabla = 0;
+                nuevo->tabla_simbolos = NULL; nuevo->cantidad_simbolos = 0; nuevo->capacidad_tabla = 0;
                 nuevo->padre = entorno_actual;
-                nuevo->id_entorno = contador_entornos++; 
-                entorno_actual = nuevo; 
+                nuevo->id_entorno = contador_entornos++;
+                entorno_actual = nuevo;
                 imprimir_indentacion();
                 fprintf(yyout_py, "def %s(", (yyvsp[-1].nombre));
-                free((yyvsp[-1].nombre));
             }
-#line 2324 "y.tab.c"
+#line 2450 "y.tab.c"
     break;
 
-  case 98: /* $@19: %empty  */
-#line 627 "parser.y"
+  case 103: /* $@19: %empty  */
+#line 672 "parser.y"
                                                 {
+                struct entrada_tabla *entrada = buscar_variable((yyvsp[-4].nombre));
+                if (entrada != NULL) {
+                    entrada->cantidad_parametros_funcion = contador_parametros;
+                    // Copiar el buffer de tipos al arreglo dinámico de la entrada
+                    if (contador_parametros > 0) {
+                        entrada->tipos_parametros = (int *) malloc(contador_parametros * sizeof(int));
+                        for (int i = 0; i < contador_parametros; i++)
+                            entrada->tipos_parametros[i] = tipos_params_actuales[i];
+                    }
+                }
+                contador_parametros = 0;
+                free((yyvsp[-4].nombre));
                 fprintf(yyout_py, "):\n");
                 nivel_indentacion++;
             }
-#line 2333 "y.tab.c"
+#line 2471 "y.tab.c"
     break;
 
-  case 99: /* funcion_NO_void: prefijo_declaracion ID '(' $@18 declaracion_variables_funcion ')' $@19 '{' instrucciones RETURN expresion ';' '}'  */
-#line 630 "parser.y"
-                                                         { //debilidad, no puede haber más de 1 return, y encima el bloque de la funcion debe terminar sí o sí con un return
+  case 104: /* funcion_NO_void: prefijo_declaracion ID '(' $@18 declaracion_variables_funcion ')' $@19 '{' instrucciones '}'  */
+#line 687 "parser.y"
+                                    {
                 nivel_indentacion--;
                 struct Entorno *viejo = entorno_actual;
                 entorno_actual = entorno_actual->padre;
                 free(viejo);
             }
-#line 2344 "y.tab.c"
+#line 2482 "y.tab.c"
     break;
 
-  case 100: /* $@20: %empty  */
-#line 640 "parser.y"
+  case 105: /* $@20: %empty  */
+#line 694 "parser.y"
                                    {
                 struct entrada_tabla *entrada = buscar_variable((yyvsp[-1].nombre));
-                        if (entrada == NULL){
-                            printf("Error semántico: la variable '%s' no existe.\n", (yyvsp[-1].nombre));
-                        }
+                if (entrada == NULL) {
+                    printf("Error semántico: la función '%s' no existe.\n", (yyvsp[-1].nombre));
+                }
                 imprimir_indentacion();
                 fprintf(yyout_py, "%s(", (yyvsp[-1].nombre));
-                free((yyvsp[-1].nombre));
             }
-#line 2358 "y.tab.c"
+#line 2495 "y.tab.c"
     break;
 
-  case 101: /* $@21: %empty  */
-#line 648 "parser.y"
+  case 106: /* $@21: %empty  */
+#line 701 "parser.y"
                                          {
+                struct entrada_tabla *entrada = buscar_variable((yyvsp[-4].nombre));
+                if (entrada != NULL && entrada->es_funcion) {
+                    if (contador_parametros != entrada->cantidad_parametros_funcion) {
+                        printf("[Error de Tipos] Línea %d: La función '%s' espera %d parámetro(s) pero se le pasaron %d.\n",
+                               yylineno, (yyvsp[-4].nombre),
+                               entrada->cantidad_parametros_funcion,
+                               contador_parametros);
+                    } else if (entrada->tipos_parametros != NULL) {
+                        // Verificar el tipo de cada argumento posición a posición
+                        for (int i = 0; i < contador_parametros; i++) {
+                            if (!verificar_compatibilidad_tipos(
+                                    entrada->tipos_parametros[i],
+                                    tipos_args_actuales[i],
+                                    entrada->nombre,
+                                    yylineno)) {
+                                printf("  (parámetro %d: se esperaba '%s', se recibió '%s')\n",
+                                       i + 1,
+                                       nombre_tipo(entrada->tipos_parametros[i]),
+                                       nombre_tipo(tipos_args_actuales[i]));
+                            }
+                        }
+                    }
+                }
+                contador_parametros = 0;
+                free((yyvsp[-4].nombre));
                 fprintf(yyout_py, ")\n");
             }
-#line 2366 "y.tab.c"
+#line 2528 "y.tab.c"
     break;
 
-  case 106: /* $@22: %empty  */
-#line 658 "parser.y"
-                                                       { 
-                        // TRUCO: Imprimimos la coma y un espacio justo cuando Bison detecta el token ','
-                        fprintf(yyout_py, ", "); 
-                   }
-#line 2375 "y.tab.c"
+  case 111: /* $@22: %empty  */
+#line 736 "parser.y"
+                                                       { fprintf(yyout_py, ", "); }
+#line 2534 "y.tab.c"
     break;
 
-  case 108: /* parametro_llamar_funcion: expresion  */
-#line 665 "parser.y"
+  case 113: /* parametro_llamar_funcion: expresion  */
+#line 739 "parser.y"
                                          { 
-        fprintf(yyout_py, "%s", (yyvsp[0].info_expr)->codigo); 
-        free((yyvsp[0].info_expr)->codigo); 
+        fprintf(yyout_py, "%s", (yyvsp[0].info_expr)->codigo);
+        // Guardar el tipo del argumento en el buffer de llamadas
+        if (contador_parametros < MAX_PARAMS)
+            tipos_args_actuales[contador_parametros] = (yyvsp[0].info_expr)->tipo_dato;
+        contador_parametros++;
+        free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
     }
-#line 2384 "y.tab.c"
+#line 2547 "y.tab.c"
     break;
 
-  case 113: /* arrays: prefijo_declaracion ID '[' volumen_array ']' dimension_array asignacion_array ';'  */
-#line 679 "parser.y"
+  case 114: /* llamada_funcion_expr: ID '(' usar_variables_funcion_expr ')'  */
+#line 750 "parser.y"
+                                                                  {
+            (yyval.info_expr) = malloc(sizeof(struct InfoExpresion));
+            struct entrada_tabla *entrada = buscar_variable((yyvsp[-3].nombre));
+            // Verificar cantidad y tipos de parámetros
+            if (entrada != NULL && entrada->es_funcion) {
+                if (contador_parametros != entrada->cantidad_parametros_funcion) {
+                    printf("[Error de Tipos] Línea %d: La función '%s' espera %d parámetro(s) pero se le pasaron %d.\n",
+                           yylineno, (yyvsp[-3].nombre),
+                           entrada->cantidad_parametros_funcion,
+                           contador_parametros);
+                } else if (entrada->tipos_parametros != NULL) {
+                    // Verificar el tipo de cada argumento posición a posición
+                    for (int i = 0; i < contador_parametros; i++) {
+                        if (!verificar_compatibilidad_tipos(
+                                entrada->tipos_parametros[i],
+                                tipos_args_actuales[i],
+                                entrada->nombre,
+                                yylineno)) {
+                            printf("  (parámetro %d: se esperaba '%s', se recibió '%s')\n",
+                                   i + 1,
+                                   nombre_tipo(entrada->tipos_parametros[i]),
+                                   nombre_tipo(tipos_args_actuales[i]));
+                        }
+                    }
+                }
+            }
+            contador_parametros = 0;
+            char buf[1024];
+            sprintf(buf, "%s(%s)", (yyvsp[-3].nombre), (yyvsp[-1].nombre));
+            (yyval.info_expr)->codigo = strdup(buf);
+            (yyval.info_expr)->tipo_dato = entrada ? entrada->tipo_base : T_INT;
+            free((yyvsp[-3].nombre)); free((yyvsp[-1].nombre));
+    }
+#line 2585 "y.tab.c"
+    break;
+
+  case 115: /* usar_variables_funcion_expr: lista_parametros_llamar_funcion_expr  */
+#line 785 "parser.y"
+                                                                       { (yyval.nombre) = (yyvsp[0].nombre); }
+#line 2591 "y.tab.c"
+    break;
+
+  case 116: /* usar_variables_funcion_expr: %empty  */
+#line 786 "parser.y"
+                                               { (yyval.nombre) = strdup(""); }
+#line 2597 "y.tab.c"
+    break;
+
+  case 117: /* lista_parametros_llamar_funcion_expr: expresion  */
+#line 789 "parser.y"
+                                                     { 
+            (yyval.nombre) = strdup((yyvsp[0].info_expr)->codigo);
+            // Guardar el tipo del argumento en el buffer de llamadas
+            if (contador_parametros < MAX_PARAMS)
+                tipos_args_actuales[contador_parametros] = (yyvsp[0].info_expr)->tipo_dato;
+            contador_parametros++;
+            free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr)); 
+        }
+#line 2610 "y.tab.c"
+    break;
+
+  case 118: /* lista_parametros_llamar_funcion_expr: lista_parametros_llamar_funcion_expr ',' expresion  */
+#line 797 "parser.y"
+                                                             { 
+            char buf[1024];
+            sprintf(buf, "%s, %s", (yyvsp[-2].nombre), (yyvsp[0].info_expr)->codigo);
+            (yyval.nombre) = strdup(buf);
+            // Guardar el tipo del argumento en el buffer de llamadas
+            if (contador_parametros < MAX_PARAMS)
+                tipos_args_actuales[contador_parametros] = (yyvsp[0].info_expr)->tipo_dato;
+            contador_parametros++;
+            free((yyvsp[-2].nombre)); free((yyvsp[0].info_expr)->codigo); free((yyvsp[0].info_expr));
+        }
+#line 2625 "y.tab.c"
+    break;
+
+  case 123: /* arrays: prefijo_declaracion ID '[' volumen_array ']' dimension_array asignacion_array ';'  */
+#line 813 "parser.y"
                                                                                               {
         struct entrada_tabla *entrada = declarar_variable((yyvsp[-6].nombre));
                 if (entrada == NULL){
@@ -2392,7 +2633,6 @@ yyreduce:
                 } else {
                     entrada->tipo_base = tipo_actual;
                     entrada->id_entorno_declarado = entorno_actual->id_entorno;
-
                     if(es_constante_actual == 1) entrada->es_constante = 1;
                     
                     imprimir_indentacion();
@@ -2405,79 +2645,71 @@ yyreduce:
                 }
                 free((yyvsp[-6].nombre));
     }
-#line 2409 "y.tab.c"
+#line 2649 "y.tab.c"
     break;
 
-  case 114: /* asignacion_array: '=' inicializador_array  */
-#line 701 "parser.y"
-                                              {
-                        (yyval.nombre) = strdup((yyvsp[0].nombre));
-                        free((yyvsp[0].nombre));
-                    }
-#line 2418 "y.tab.c"
+  case 124: /* asignacion_array: '=' inicializador_array  */
+#line 834 "parser.y"
+                                              { (yyval.nombre) = strdup((yyvsp[0].nombre)); free((yyvsp[0].nombre)); }
+#line 2655 "y.tab.c"
     break;
 
-  case 115: /* asignacion_array: %empty  */
-#line 705 "parser.y"
-                                   {
-                        (yyval.nombre) = NULL;
-                    }
-#line 2426 "y.tab.c"
+  case 125: /* asignacion_array: %empty  */
+#line 835 "parser.y"
+                                   { (yyval.nombre) = NULL; }
+#line 2661 "y.tab.c"
     break;
 
-  case 116: /* inicializador_array: '{' lista_inicializadores '}'  */
-#line 713 "parser.y"
+  case 126: /* inicializador_array: '{' lista_inicializadores '}'  */
+#line 840 "parser.y"
     {
-        // En C entraron { y }, pero para Python armamos el string con [ y ]
         (yyval.nombre) = malloc(strlen((yyvsp[-1].nombre)) + 3);
         sprintf((yyval.nombre), "[%s]", (yyvsp[-1].nombre));
         free((yyvsp[-1].nombre));
     }
-#line 2437 "y.tab.c"
+#line 2671 "y.tab.c"
     break;
 
-  case 117: /* lista_inicializadores: valor_o_anidado  */
-#line 724 "parser.y"
+  case 127: /* lista_inicializadores: valor_o_anidado  */
+#line 849 "parser.y"
     {
         (yyval.nombre) = strdup((yyvsp[0].nombre));
         free((yyvsp[0].nombre));
     }
-#line 2446 "y.tab.c"
+#line 2680 "y.tab.c"
     break;
 
-  case 118: /* lista_inicializadores: lista_inicializadores ',' valor_o_anidado  */
-#line 729 "parser.y"
+  case 128: /* lista_inicializadores: lista_inicializadores ',' valor_o_anidado  */
+#line 854 "parser.y"
     {
-        // Concatenamos lo que ya teníamos con el nuevo valor
         (yyval.nombre) = malloc(strlen((yyvsp[-2].nombre)) + strlen((yyvsp[0].nombre)) + 3);
         sprintf((yyval.nombre), "%s, %s", (yyvsp[-2].nombre), (yyvsp[0].nombre));
         free((yyvsp[-2].nombre));
         free((yyvsp[0].nombre));
     }
-#line 2458 "y.tab.c"
+#line 2691 "y.tab.c"
     break;
 
-  case 119: /* valor_o_anidado: expresion  */
-#line 742 "parser.y"
-    {
+  case 129: /* valor_o_anidado: expresion  */
+#line 863 "parser.y"
+              {
         (yyval.nombre) = strdup((yyvsp[0].info_expr)->codigo);
         free((yyvsp[0].info_expr));
     }
-#line 2467 "y.tab.c"
+#line 2700 "y.tab.c"
     break;
 
-  case 120: /* valor_o_anidado: inicializador_array  */
-#line 747 "parser.y"
-    {
+  case 130: /* valor_o_anidado: inicializador_array  */
+#line 867 "parser.y"
+                          {
         (yyval.nombre) = strdup((yyvsp[0].nombre)); 
         free((yyvsp[0].nombre));
-        // Ya viene con los corchetes [] armados desde inicializador_array
     }
-#line 2477 "y.tab.c"
+#line 2709 "y.tab.c"
     break;
 
 
-#line 2481 "y.tab.c"
+#line 2713 "y.tab.c"
 
       default: break;
     }
@@ -2670,7 +2902,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 754 "parser.y"
+#line 873 "parser.y"
 
 
 /* Inclusión rústica del analizador léxico al final del archivo */
@@ -2680,24 +2912,18 @@ void yyerror(const char *s) {
     fprintf(stderr, "Error sintáctico en la línea %d: %s\n", yylineno, s);
 }
 
-
-
-
 int main(int argc, char **argv) {                                       
         if (argc != 3) {                                                    
-            printf("Uso: %s <archivo_entrada.c> <archivo_salida.py>\n",     
-  argv[0]);                                                                 
+            printf("Uso: %s <archivo_entrada.c> <archivo_salida.py>\n", argv[0]);                                                                 
             return 1;                                                       
         }                                                                   
                                                                             
-        // 1. Abrimos el archivo .c de entrada y se lo pasamos a Lex        
         yyin = fopen(argv[1], "r");                                         
         if (!yyin) {                                                        
             printf("No se pudo abrir el archivo %s\n", argv[1]);            
             return 1;                                                       
         }                                                                   
                                                                             
-        // 2. Abrimos/creamos el archivo .py de salida                      
         yyout_py = fopen(argv[2], "w");                                     
         if (!yyout_py) {                                                    
             printf("No se pudo crear el archivo %s\n", argv[2]);            
@@ -2705,7 +2931,6 @@ int main(int argc, char **argv) {
             return 1;                                                       
         }                                                                   
                                                                             
-        // 3. Iniciamos el proceso de análisis
         entorno_actual = (struct Entorno *) malloc(sizeof(struct Entorno));
         entorno_actual->tabla_simbolos = NULL;
         entorno_actual->cantidad_simbolos = 0;
@@ -2716,8 +2941,7 @@ int main(int argc, char **argv) {
         yyparse();                                                          
         printf("Compilacion finalizada.\n");                                
                                                                             
-        // 4. Cerramos los archivos                                         
         fclose(yyin);                                                       
         fclose(yyout_py);                                                   
         return 0;                                                           
-    }          
+}

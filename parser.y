@@ -11,6 +11,13 @@ int yylex(void);
 
 int tipo_actual = 0;
 int es_constante_actual = 0;
+int contador_parametros = 0;
+
+#define MAX_PARAMS 32
+// Buffer que se llena mientras se parsea la DECLARACIÓN de una función
+int tipos_params_actuales[MAX_PARAMS];
+// Buffer que se llena mientras se parsea la LLAMADA a una función
+int tipos_args_actuales[MAX_PARAMS];
 
 
 extern int yylineno; //contador de lineas
@@ -24,6 +31,14 @@ void imprimir_indentacion() {
     }
 }
 
+int max_tipo(int t1, int t2) {
+    if ((t1 == T_INT || t1 == T_FLOAT || t1 == T_DOUBLE) &&
+        (t2 == T_INT || t2 == T_FLOAT || t2 == T_DOUBLE)) {
+        return (t1 > t2) ? t1 : t2;
+    }
+    return t1;
+}
+
 struct InfoExpresion {
         char *codigo;
         int tipo_dato; 
@@ -31,24 +46,31 @@ struct InfoExpresion {
 
 %}
 
-/* union: Su función en el mundo es redefinir la "caja de encomiendas" (yylval) 
-para que tenga compartimentos de distintos tipos de datos.*/
 %union {
     char *nombre;     
     double val_num;   
     struct InfoExpresion *info_expr;
 }
 
-/* DECLARAMOS LOS TOKENS Y LE ASIGNAMOS EL TIPO DE LA UNION A ID */
 %token IF ELSE WHILE RETURN INT FLOAT CHAR CONST DOUBLE FOR SWITCH CASE VOID
-%token MAYOR_IGUAL IGUAL_IGUAL MENOR_IGUAL BREAK DEFAULT
+%token MAYOR_IGUAL IGUAL_IGUAL MENOR_IGUAL NO_IGUAL BREAK DEFAULT AND OR
 %token <nombre> ID
 %token <val_num> NUMERO 
 %type <nombre> loop_consecuencia
-%type <nombre> inicializador_array lista_inicializadores valor_o_anidado asignacion_array
+%type <nombre> inicializador_array lista_inicializadores valor_o_anidado asignacion_array accesos_array
+%type <nombre> usar_variables_funcion lista_parametros_llamar_funcion parametro_llamar_funcion
 
+/* --- NUEVO: Tipos para funciones en expresiones y arrays --- */
+%type <nombre> usar_variables_funcion_expr lista_parametros_llamar_funcion_expr
+%type <info_expr> llamada_funcion_expr
+
+%left OR
+%left AND
+%left IGUAL_IGUAL NO_IGUAL
+%left '<' '>' MENOR_IGUAL MAYOR_IGUAL
 %left '+' '-'
-%left '*' '/'
+%left '*' '/' '%'
+%right '!'
 %type <info_expr> expresion 
 
 %%
@@ -57,7 +79,6 @@ programa: instrucciones
         ;
 
 bloque   : '{' {
-                /* Acción intermedia: Al abrir '{', creamos entorno local */
                 struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
                 nuevo->tabla_simbolos = NULL;
                 nuevo->cantidad_simbolos = 0;
@@ -67,11 +88,8 @@ bloque   : '{' {
                 entorno_actual = nuevo; 
             } 
         instrucciones '}' {
-                /* Acción final: Al cerrar '}', regresamos de nivel al padre */
                 struct Entorno *viejo = entorno_actual;
                 entorno_actual = entorno_actual->padre;
-                
-                /* Opcional: Podés liberar la memoria de 'viejo' aquí si querés */
             }
       ;
 
@@ -81,13 +99,21 @@ instrucciones : instrucciones instruccion
 
 instruccion : declaracion 
            | asignacion
-           | bloque
            | loop
            | condicionales
            | funcion_void
            | funcion_NO_void
            | llamar_funcion
            | arrays
+           | RETURN expresion ';' {
+                imprimir_indentacion();
+                fprintf(yyout_py, "return %s\n", $2->codigo);
+                free($2->codigo); free($2);
+           }
+           | RETURN ';' {
+                imprimir_indentacion();
+                fprintf(yyout_py, "return\n");
+           }
            ;
 
 declaracion : prefijo_declaracion declarar_lista_ids ';' { es_constante_actual = 0; }
@@ -104,7 +130,7 @@ for_init : declaracion
 asignacion : lista_asignaciones ';' ;
 
 prefijo_declaracion : tipo             { es_constante_actual = 0; }
-                    | CONST tipo       { es_constante_actual = 1; } /* ¡Se activa ANTES de lista_ids! */
+                    | CONST tipo       { es_constante_actual = 1; } 
                     ;
 
 tipo : INT    { tipo_actual = T_INT; }
@@ -120,11 +146,9 @@ declarar_lista_ids : ID {
                 } else {
                     entrada->tipo_base = tipo_actual;
                     entrada->id_entorno_declarado = entorno_actual->id_entorno;
-
                     if(es_constante_actual == 1) entrada->es_constante = 1;
 
-                    // --- GENERACIÓN DE CÓDIGO PYTHON ---
-                    imprimir_indentacion(); // <-- Cada uno imprime su espacio al inicio
+                    imprimir_indentacion();
                     fprintf(yyout_py, "%s_%d = None\n", $1, entorno_actual->id_entorno);
                 }
                 free($1);
@@ -136,11 +160,9 @@ declarar_lista_ids : ID {
                 } else {
                     entrada->tipo_base = tipo_actual;
                     entrada->id_entorno_declarado = entorno_actual->id_entorno;
-
                     if(es_constante_actual == 1) entrada->es_constante = 1;
                     
-                    // --- GENERACIÓN DE CÓDIGO PYTHON ---
-                    imprimir_indentacion(); // <-- Indentamos
+                    imprimir_indentacion(); 
                     fprintf(yyout_py, "%s_%d = None\n", $3, entorno_actual->id_entorno);
                 }
                 free($3);
@@ -151,13 +173,13 @@ declarar_lista_ids : ID {
                     printf("Error semántico: la variable '%s' ya fue declarada.\n", $1);
                 } else {
                     entrada->tipo_base = tipo_actual;
-                    // ¡OJO! Te faltaba esta línea fundamental para que el while sepa su ID real:
                     entrada->id_entorno_declarado = entorno_actual->id_entorno; 
-
                     if(es_constante_actual == 1) entrada->es_constante = 1;
                     
-                    // --- GENERACIÓN DE CÓDIGO PYTHON ---
-                    imprimir_indentacion(); // <-- Indentamos
+                    // Comprobación de tipos: verificar que la expresión sea compatible
+                    verificar_compatibilidad_tipos(tipo_actual, $3->tipo_dato, $1, yylineno);
+
+                    imprimir_indentacion();
                     fprintf(yyout_py, "%s_%d = %s\n", $1, entorno_actual->id_entorno, $3->codigo);
                 }
                 free($1);
@@ -168,13 +190,13 @@ declarar_lista_ids : ID {
                     printf("Error semántico: la variable '%s' ya fue declarada.\n", $3);
                 } else {
                     entrada->tipo_base = tipo_actual;
-                    // ¡OJO! Aquí también te faltaba:
                     entrada->id_entorno_declarado = entorno_actual->id_entorno;
-
                     if(es_constante_actual == 1) entrada->es_constante = 1;
+
+                    // Comprobación de tipos: verificar que la expresión sea compatible
+                    verificar_compatibilidad_tipos(tipo_actual, $5->tipo_dato, $3, yylineno);
                     
-                    
-                    imprimir_indentacion(); // Indentamos
+                    imprimir_indentacion(); 
                     fprintf(yyout_py, "%s_%d = %s\n", $3, entorno_actual->id_entorno, $5->codigo);
                 }
                 free($3);
@@ -190,62 +212,77 @@ asignacion_unitaria : ID '=' expresion {
                         if (entrada == NULL){
                             printf("Error semántico: la variable '%s' no existe.\n", $1);
                         } else {
+                            // Comprobación de tipos en reasignación
+                            if (!entrada->es_funcion) {
+                                verificar_compatibilidad_tipos(entrada->tipo_base, $3->tipo_dato, entrada->nombre, yylineno);
+                            }
+                            // Verificar que no se asigne a una constante
+                            if (entrada->es_constante) {
+                                printf("[Error de Tipos] Línea %d: No se puede reasignar la constante '%s'.\n", yylineno, entrada->nombre);
+                            }
                             imprimir_indentacion();
                             fprintf(yyout_py, "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, $3->codigo);
                         }
-                        free($1); free($3);
+                        free($1); free($3->codigo); free($3);
+                    }
+                    /* --- NUEVO PUNTO 1: Permitir setear un array ej. matriz[0][1] = 5 --- */
+                    | ID accesos_array '=' expresion {
+                        struct entrada_tabla *entrada = buscar_variable($1);
+                        if (entrada == NULL){
+                            printf("Error semántico: la variable array '%s' no existe.\n", $1);
+                        } else {
+                            imprimir_indentacion();
+                            // El nombre de python + los corchetes
+                            fprintf(yyout_py, "%s_%d%s = %s\n", entrada->nombre, entrada->id_entorno_declarado, $2, $4->codigo);
+                        }
+                        free($1); free($2); free($4->codigo); free($4);
                     }
                     | ID'+''+' {
                         struct entrada_tabla *entrada = buscar_variable($1);
-                        if (entrada == NULL){
-                            printf("Error semántico: la variable '%s' no existe.\n", $1);
-                        } else {
-                            imprimir_indentacion();
-                            fprintf(yyout_py, "%s_%d += 1\n", entrada->nombre, entrada->id_entorno_declarado);
-                        }
+                        if (entrada == NULL) printf("Error semántico.\n");
+                        else { imprimir_indentacion(); fprintf(yyout_py, "%s_%d += 1\n", entrada->nombre, entrada->id_entorno_declarado); }
                         free($1);
                     }
                     | ID'-''-' {
                         struct entrada_tabla *entrada = buscar_variable($1);
-                        if (entrada == NULL){
-                            printf("Error semántico: la variable '%s' no existe.\n", $1);
-                        } else {
-                            imprimir_indentacion();
-                            fprintf(yyout_py, "%s_%d -= 1\n", entrada->nombre, entrada->id_entorno_declarado);
-                        }
+                        if (entrada == NULL) printf("Error semántico.\n");
+                        else { imprimir_indentacion(); fprintf(yyout_py, "%s_%d -= 1\n", entrada->nombre, entrada->id_entorno_declarado); }
                         free($1);
                     }
                     | '+''+'ID {
                         struct entrada_tabla *entrada = buscar_variable($3);
-                        if (entrada == NULL){
-                            printf("Error semántico: la variable '%s' no existe.\n", $3);
-                        } else {
-                            imprimir_indentacion();
-                            fprintf(yyout_py, "%s_%d += 1\n", entrada->nombre, entrada->id_entorno_declarado);
-                        }
+                        if (entrada == NULL) printf("Error semántico.\n");
+                        else { imprimir_indentacion(); fprintf(yyout_py, "%s_%d += 1\n", entrada->nombre, entrada->id_entorno_declarado); }
                         free($3);
                     }
                     | '-''-'ID {
                         struct entrada_tabla *entrada = buscar_variable($3);
-                        if (entrada == NULL){
-                            printf("Error semántico: la variable '%s' no existe.\n", $3);
-                        } else {
-                            imprimir_indentacion();
-                            fprintf(yyout_py, "%s_%d -= 1\n", entrada->nombre, entrada->id_entorno_declarado);
-                        }
+                        if (entrada == NULL) printf("Error semántico.\n");
+                        else { imprimir_indentacion(); fprintf(yyout_py, "%s_%d -= 1\n", entrada->nombre, entrada->id_entorno_declarado); }
                         free($3);
                     }
                     | ID {
                         struct entrada_tabla *entrada = buscar_variable($1);
-                        if (entrada == NULL){
-                            printf("Error semántico: la variable '%s' no existe.\n", $1);
-                        } else {
-                            imprimir_indentacion();
-                            fprintf(yyout_py, "%s_%d\n", entrada->nombre, entrada->id_entorno_declarado);
-                        }
+                        if (entrada == NULL) printf("Error semántico.\n");
+                        else { imprimir_indentacion(); fprintf(yyout_py, "%s_%d\n", entrada->nombre, entrada->id_entorno_declarado); }
                         free($1);
                     }
                     ;
+
+/* --- NUEVO PUNTO 1: Regla para iterar y leer [][][] arrays --- */
+accesos_array : '[' expresion ']' {
+                    char buf[256];
+                    sprintf(buf, "[%s]", $2->codigo);
+                    $$ = strdup(buf);
+                    free($2->codigo); free($2);
+                }
+              | accesos_array '[' expresion ']' {
+                    char buf[512];
+                    sprintf(buf, "%s[%s]", $1, $3->codigo);
+                    $$ = strdup(buf);
+                    free($1); free($3->codigo); free($3);
+                }
+              ;
 
 loop : FOR {
             struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
@@ -259,10 +296,7 @@ loop : FOR {
                 fprintf(yyout_py, "%s", $7);
                 free($7);
             }
-
-            nivel_indentacion--; // Bajamos la indentación de Python
-
-            /* 2. Destruimos el entorno local del loop */
+            nivel_indentacion--; 
             struct Entorno *viejo = entorno_actual;
             entorno_actual = entorno_actual->padre;
             free(viejo);
@@ -271,46 +305,15 @@ loop : FOR {
         nivel_indentacion--;
     }
     ;
-     
 
 condicion_loop : expresion '=' expresion {
                     imprimir_indentacion();
                     printf("Error: aunque C acepte la forma loop('expresion = expresion'), python no lo hace, por favor, correjir la línea %d.\n", yylineno);
                     fprintf(yyout_py, "while %s = %s:\n", $1->codigo, $3->codigo);
                     nivel_indentacion++;
-                    free($1); free($3);
-            }
-               | expresion '>' expresion {
-                    imprimir_indentacion();
-                    fprintf(yyout_py, "while %s > %s:\n", $1->codigo, $3->codigo);
-                    nivel_indentacion++;
-                    free($1); free($3);
-            }
-               | expresion '<' expresion {
-                    imprimir_indentacion();
-                    fprintf(yyout_py, "while %s < %s:\n", $1->codigo, $3->codigo);
-                    nivel_indentacion++;
-                    free($1); free($3);
-            }
-               | expresion MAYOR_IGUAL expresion {
-                    imprimir_indentacion();
-                    fprintf(yyout_py, "while %s >= %s:\n", $1->codigo, $3->codigo);
-                    nivel_indentacion++;
                     free($1->codigo); free($1); free($3->codigo); free($3);
             }
-               | expresion MENOR_IGUAL expresion { // NUMERO '<=' ID
-                    imprimir_indentacion();
-                    fprintf(yyout_py, "while %s <= %s:\n", $1->codigo, $3->codigo);
-                    nivel_indentacion++;
-                    free($1->codigo); free($1); free($3->codigo); free($3);
-            }
-               | expresion IGUAL_IGUAL expresion {
-                    imprimir_indentacion();
-                    fprintf(yyout_py, "while %s == %s:\n", $1->codigo, $3->codigo);
-                    nivel_indentacion++;
-                    free($1->codigo); free($1); free($3->codigo); free($3);
-            }
-            | expresion {
+               | expresion {
                     imprimir_indentacion();
                     fprintf(yyout_py, "while %s:\n", $1->codigo);
                     nivel_indentacion++;
@@ -318,47 +321,30 @@ condicion_loop : expresion '=' expresion {
             }
             ;
 
-loop_consecuencia: ID {
-                    struct entrada_tabla *entrada = buscar_variable($1);
-                if (entrada == NULL){
-                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $1);
-                    $$ = strdup("");
-                } else {
-                    $$ = strdup("");
-                }
-            }
+loop_consecuencia: ID { $$ = strdup(""); }
                 | ID'+''+' {
                     struct entrada_tabla *entrada = buscar_variable($1);
-                if (entrada == NULL){
-                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $1);
-                    $$ = strdup("");
-                } else {
-                    char buf[256];
-                    snprintf(buf, sizeof(buf), "%s_%d += 1\n", entrada->nombre, entrada->id_entorno_declarado);
-                    $$ = strdup(buf);
-                }
+                    if (entrada != NULL){
+                        char buf[256];
+                        snprintf(buf, sizeof(buf), "%s_%d += 1\n", entrada->nombre, entrada->id_entorno_declarado);
+                        $$ = strdup(buf);
+                    } else $$ = strdup("");
                 }
                 |  '-''-'ID {
-                        struct entrada_tabla *entrada = buscar_variable($3);
-                if (entrada == NULL){
-                    printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $3);
-                    $$ = strdup("");
-                } else {
-                    char buf[256];
-                    snprintf(buf, sizeof(buf), "%s_%d -= 1\n", entrada->nombre, entrada->id_entorno_declarado);
-                    $$ = strdup(buf);
-                }
+                    struct entrada_tabla *entrada = buscar_variable($3);
+                    if (entrada != NULL){
+                        char buf[256];
+                        snprintf(buf, sizeof(buf), "%s_%d -= 1\n", entrada->nombre, entrada->id_entorno_declarado);
+                        $$ = strdup(buf);
+                    } else $$ = strdup("");
                 }
                 | ID '=' expresion {
                     struct entrada_tabla *entrada = buscar_variable($1);
-                    if (entrada == NULL){
-                        printf("Error semántico: la variable '%s' no fue declarada en este bloque.\n", $1);
-                        $$ = strdup("");
-                    } else {
+                    if (entrada != NULL){
                         char buf[512];
                         snprintf(buf, sizeof(buf), "%s_%d = %s\n", entrada->nombre, entrada->id_entorno_declarado, $3->codigo);
                         $$ = strdup(buf);
-                    }
+                    } else $$ = strdup("");
                     free($1); free($3);
                 }
                 ;
@@ -369,9 +355,8 @@ expresion : ID {
                 if (entrada == NULL) {
                     printf("Error semántico: '%s' no declarada.\n", $1);
                     $$->codigo = strdup($1); 
-                    $$->tipo_dato = T_INT; // Asumimos INT por defecto si hay error
+                    $$->tipo_dato = T_INT; 
                 } else {
-                    // Si existe, generamos su nombre real de Python con su entorno: ej "i_1"
                     char buf[100];
                     sprintf(buf, "%s_%d", entrada->nombre, entrada->id_entorno_declarado);
                     $$->codigo = strdup(buf);
@@ -379,66 +364,140 @@ expresion : ID {
                 }
                 free($1);
           }
+          /* --- NUEVO PUNTO 1: Leer un elemento de array ej. x = matriz[0][1] --- */
+          | ID accesos_array {
+                $$ = malloc(sizeof(struct InfoExpresion));
+                struct entrada_tabla *entrada = buscar_variable($1);
+                if (entrada == NULL) {
+                    printf("Error semántico: '%s' (array) no declarada.\n", $1);
+                    $$->codigo = strdup($1); 
+                    $$->tipo_dato = T_INT;
+                } else {
+                    char buf[512];
+                    sprintf(buf, "%s_%d%s", entrada->nombre, entrada->id_entorno_declarado, $2);
+                    $$->codigo = strdup(buf);
+                    $$->tipo_dato = entrada->tipo_base;
+                }
+                free($1); free($2);
+          }
+          /* --- NUEVO PUNTO 3: Poder llamar a funciones desde expresiones --- */
+          | llamada_funcion_expr {
+                $$ = $1;
+          }
           | NUMERO {
-            $$ = malloc(sizeof(struct InfoExpresion));
+                $$ = malloc(sizeof(struct InfoExpresion));
                 char buf[50];
                 sprintf(buf, "%g", $1);
                 $$->codigo = strdup(buf);
-                $$->tipo_dato = T_INT; // <-- ¡Faltaba esto!
+                /* --- NUEVO PUNTO 5: Si el string tiene un punto, es float --- */
+                if (strchr(buf, '.') != NULL) {
+                    $$->tipo_dato = T_FLOAT;
+                } else {
+                    $$->tipo_dato = T_INT;
+                }
           }
           | expresion '+' expresion {
                 $$ = malloc(sizeof(struct InfoExpresion));
                 char buf[256];
                 sprintf(buf, "%s + %s", $1->codigo, $3->codigo);
                 $$->codigo = strdup(buf);
-                if ($1->tipo_dato != $3->tipo_dato) {
-                        printf("[Error Semántico] Línea %d: Tipos incompatibles en la suma.\n", yylineno);
-                }
-                // 3. Heredamos el tipo (Asumimos que si llegamos acá el resultado es del mismo tipo)
-                $$->tipo_dato = $1->tipo_dato; // <-- ¡Faltaba esto!
-                
-                free($1->codigo); free($1);
-                free($3->codigo); free($3);
+                /* --- NUEVO PUNTO 2: Promoción de tipos automática --- */
+                $$->tipo_dato = max_tipo($1->tipo_dato, $3->tipo_dato); 
+                free($1->codigo); free($1); free($3->codigo); free($3);
           }
           | expresion '-' expresion {
                 $$ = malloc(sizeof(struct InfoExpresion));
                 char buf[256];
                 sprintf(buf, "%s - %s", $1->codigo, $3->codigo);
                 $$->codigo = strdup(buf);
-                
-                if ($1->tipo_dato != $3->tipo_dato) {
-                    printf("[Error Semántico] Línea %d: Tipos incompatibles en la resta.\n", yylineno);
-                }
-                
-                $$->tipo_dato = $1->tipo_dato;
-                
-                free($1->codigo); free($1);
-                free($3->codigo); free($3);
+                $$->tipo_dato = max_tipo($1->tipo_dato, $3->tipo_dato);
+                free($1->codigo); free($1); free($3->codigo); free($3);
           }
           | expresion '*' expresion {
                 $$ = malloc(sizeof(struct InfoExpresion));
                 char buf[256];
                 sprintf(buf, "%s * %s", $1->codigo, $3->codigo);
                 $$->codigo = strdup(buf);
-                
-                if ($1->tipo_dato != $3->tipo_dato) {
-                    printf("[Error Semántico] Línea %d: Tipos incompatibles en la multiplicación.\n", yylineno);
-                }
-                
-                $$->tipo_dato = $1->tipo_dato;
-                
-                free($1->codigo); free($1);
-                free($3->codigo); free($3);
+                $$->tipo_dato = max_tipo($1->tipo_dato, $3->tipo_dato);
+                free($1->codigo); free($1); free($3->codigo); free($3);
+          }
+          /* --- NUEVO PUNTO 5: División, Modulo y Lógicos/Relacionales --- */
+          | expresion '/' expresion {
+                $$ = malloc(sizeof(struct InfoExpresion));
+                char buf[256];
+                sprintf(buf, "%s / %s", $1->codigo, $3->codigo);
+                $$->codigo = strdup(buf);
+                $$->tipo_dato = max_tipo($1->tipo_dato, $3->tipo_dato);
+                free($1->codigo); free($1); free($3->codigo); free($3);
+          }
+          | expresion '%' expresion {
+                $$ = malloc(sizeof(struct InfoExpresion));
+                char buf[256];
+                sprintf(buf, "%s %% %s", $1->codigo, $3->codigo);
+                $$->codigo = strdup(buf);
+                $$->tipo_dato = T_INT;
+                free($1->codigo); free($1); free($3->codigo); free($3);
+          }
+          | expresion AND expresion {
+                $$ = malloc(sizeof(struct InfoExpresion));
+                char buf[256];
+                sprintf(buf, "%s and %s", $1->codigo, $3->codigo); // Traduccion a python "and"
+                $$->codigo = strdup(buf);
+                $$->tipo_dato = T_INT;
+                free($1->codigo); free($1); free($3->codigo); free($3);
+          }
+          | expresion OR expresion {
+                $$ = malloc(sizeof(struct InfoExpresion));
+                char buf[256];
+                sprintf(buf, "%s or %s", $1->codigo, $3->codigo); // Traduccion a python "or"
+                $$->codigo = strdup(buf);
+                $$->tipo_dato = T_INT;
+                free($1->codigo); free($1); free($3->codigo); free($3);
+          }
+          | '!' expresion {
+                $$ = malloc(sizeof(struct InfoExpresion));
+                char buf[256];
+                sprintf(buf, "not %s", $2->codigo); // Traduccion a python "not"
+                $$->codigo = strdup(buf);
+                $$->tipo_dato = T_INT;
+                free($2->codigo); free($2);
+          }
+          | expresion '>' expresion {
+                $$ = malloc(sizeof(struct InfoExpresion)); char buf[256];
+                sprintf(buf, "%s > %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT;
+                free($1->codigo); free($1); free($3->codigo); free($3);
+          }
+          | expresion '<' expresion {
+                $$ = malloc(sizeof(struct InfoExpresion)); char buf[256];
+                sprintf(buf, "%s < %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT;
+                free($1->codigo); free($1); free($3->codigo); free($3);
+          }
+          | expresion IGUAL_IGUAL expresion {
+                $$ = malloc(sizeof(struct InfoExpresion)); char buf[256];
+                sprintf(buf, "%s == %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT;
+                free($1->codigo); free($1); free($3->codigo); free($3);
+          }
+          | expresion NO_IGUAL expresion {
+                $$ = malloc(sizeof(struct InfoExpresion)); char buf[256];
+                sprintf(buf, "%s != %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT;
+                free($1->codigo); free($1); free($3->codigo); free($3);
+          }
+          | expresion MAYOR_IGUAL expresion {
+                $$ = malloc(sizeof(struct InfoExpresion)); char buf[256];
+                sprintf(buf, "%s >= %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT;
+                free($1->codigo); free($1); free($3->codigo); free($3);
+          }
+          | expresion MENOR_IGUAL expresion {
+                $$ = malloc(sizeof(struct InfoExpresion)); char buf[256];
+                sprintf(buf, "%s <= %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT;
+                free($1->codigo); free($1); free($3->codigo); free($3);
           }
           | '(' expresion ')' {
                 $$ = malloc(sizeof(struct InfoExpresion));
                 char buf[256];
                 sprintf(buf, "(%s)", $2->codigo);
                 $$->codigo = strdup(buf);
-                
-                // Los paréntesis no cambian el tipo, solo lo pasan hacia arriba
                 $$->tipo_dato = $2->tipo_dato; 
-                
                 free($2->codigo); free($2);
           }
           ;
@@ -455,9 +514,6 @@ expresion : ID {
         | SWITCH '(' expresion ')' {
             
         }'{' {
-            /*if($1 == float){
-                printf("Error, prohibida sintaxis para switch, la expresion debe ser entera, arreglar linea %d\n", yylineno);
-             } TODO cambiar esto cuando ya tengamos un verificador de tipos*/ 
             imprimir_indentacion();
             fprintf(yyout_py, "match %s:\n", $3->codigo);
             nivel_indentacion++;
@@ -468,7 +524,6 @@ expresion : ID {
         ;
 
     bloque_else: ELSE IF '(' { 
-                // Traducimos el 'else if' de C al 'elif' de Python
                 imprimir_indentacion(); 
                 fprintf(yyout_py, "elif "); 
            } 
@@ -481,7 +536,6 @@ expresion : ID {
            } bloque_else
          
          | ELSE { 
-                // El caso base de cierre: un 'else:' simple
                 imprimir_indentacion(); 
                 fprintf(yyout_py, "else:\n"); 
                 nivel_indentacion++;
@@ -490,22 +544,21 @@ expresion : ID {
                 nivel_indentacion--;
            }
          
-         | /* vacío (regla lambda por si el IF no tiene ningún ELSE) */
+         | /* vacío */
          ;
 
     switch_cases: CASE expresion ':'{
                     if (strchr($2->codigo, '_') != NULL) {
                         printf("[Error Semántico] Línea %d: El valor del 'case' debe ser una constante, no una variable ('%s').\n", yylineno, $2->codigo);
-                    } //si expresion trae un _ en su nombre, significa que es una variable, algo prohbido en c
+                    }
                     imprimir_indentacion();
                     fprintf(yyout_py, "case %s:\n", $2->codigo);
-                    nivel_indentacion++; //subimos la indentación para las instrucciones de este case específico
+                    nivel_indentacion++; 
                     free($2);
     } instrucciones BREAK ';' {
         nivel_indentacion--;
     } switch_cases
                 | DEFAULT ':' {
-                    // Opcional: Agregamos soporte para el 'default:' de C -> 'case _:' de Python
                     imprimir_indentacion();
                     fprintf(yyout_py, "case _:\n");
                     nivel_indentacion++;
@@ -514,69 +567,43 @@ expresion : ID {
                     nivel_indentacion--;
               }
                 | error switch_cases { 
-                    // Si algo falla dentro de un case, Bison limpia la pila 
-                    // hasta encontrar el inicio del Siguiente CASE o el cierre '}'
                     printf("[Error Sintáctico] Línea %d: 'case' mal formado o falta ';' tras el break.\n", yylineno);
-                    yyerrok; // Indica a Bison que ya retomamos el control
+                    yyerrok; 
               }
-
             | /* vacío */
             ;
 
     condicion_IF: expresion '=' expresion {
-                    printf("Error: aunque C acepte la forma condicional('expresion = expresion'), python no lo hace, por favor, corregir la línea %d.\n", yylineno);
+                    printf("Error: aunque C acepte la forma condicional('expresion = expresion'), python no lo hace.\n");
                     fprintf(yyout_py, "%s = %s", $1->codigo, $3->codigo);
-                    free($1); free($3);
-            }
-               | expresion '>' expresion {
-                    fprintf(yyout_py, "%s > %s", $1->codigo, $3->codigo);
-                    free($1); free($3);
-            }
-               | expresion '<' expresion {
-                    fprintf(yyout_py, "%s < %s", $1->codigo, $3->codigo);
-                    free($1); free($3);
-            }
-               | expresion MAYOR_IGUAL expresion {
-                    fprintf(yyout_py, "%s >= %s", $1->codigo, $3->codigo);
                     free($1->codigo); free($1); free($3->codigo); free($3);
             }
-               | expresion MENOR_IGUAL expresion { // NUMERO '<=' ID
-                    fprintf(yyout_py, "%s <= %s", $1->codigo, $3->codigo);
-                    free($1->codigo); free($1); free($3->codigo); free($3);
-            }
-               | expresion IGUAL_IGUAL expresion {
-                    fprintf(yyout_py, "%s == %s", $1->codigo, $3->codigo);
-                    free($1->codigo); free($1); free($3->codigo); free($3);
-            }
-            | expresion {
+               | expresion {
                     fprintf(yyout_py, "%s", $1->codigo);
                     free($1->codigo); free($1);
             }
             ;
 
 declaracion_variables_funcion : lista_parametros
-                          | /* vacío (por si la función no recibe parámetros) */
+                          | /* vacío */
                           ;
 
 lista_parametros : parametro_void
-                 | lista_parametros ',' { 
-                        // TRUCO: Imprimimos la coma y un espacio justo cuando Bison detecta el token ','
-                        fprintf(yyout_py, ", "); 
-                   } 
-                   parametro_void
+                 | lista_parametros ',' { fprintf(yyout_py, ", "); } parametro_void
                  ;
 
-parametro_void : tipo ID { //realmente es malo este nombre parametro_void, porque las funciones que no son void tambien usan esta gramatica, pero no se me ocurre un nombre bueno y que no sea largo, y tampoco importa tanto
+parametro_void : tipo ID { 
                 struct entrada_tabla *entrada = declarar_variable($2);
                 if (entrada == NULL){
                     printf("Error semántico: la variable '%s' ya fue declarada.\n", $2);
                 } else {
                     entrada->tipo_base = tipo_actual;
                     entrada->id_entorno_declarado = entorno_actual->id_entorno;
-
+                    // Guardamos el tipo de este parámetro en el buffer de declaración
+                    if (contador_parametros < MAX_PARAMS)
+                        tipos_params_actuales[contador_parametros] = tipo_actual;
+                    contador_parametros++;
                     if(es_constante_actual == 1) entrada->es_constante = 1;
-
-                    // Imprimimos el nombre limpio directamente en Python, sin indentación extra
                     fprintf(yyout_py, "%s_%d", $2, entorno_actual->id_entorno);
                 }
                 free($2);
@@ -584,17 +611,37 @@ parametro_void : tipo ID { //realmente es malo este nombre parametro_void, porqu
           ;
 
             funcion_void: VOID ID '(' {
-                struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
-                nuevo->tabla_simbolos = NULL;
-                nuevo->cantidad_simbolos = 0;
-                nuevo->capacidad_tabla = 0;
-                nuevo->padre = entorno_actual;
-                nuevo->id_entorno = contador_entornos++; 
-                entorno_actual = nuevo; 
-                imprimir_indentacion();
-                fprintf(yyout_py, "def %s(", $2);
-                free($2);
+                struct entrada_tabla *entrada = declarar_variable($2);
+                if (entrada == NULL){
+                    printf("Error semántico: la función '%s' ya fue declarada.\n", $2);
+                } else {
+                    entrada->tipo_base = T_VOID;
+                    entrada->es_funcion = 1;
+                    struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
+                    nuevo->tabla_simbolos = NULL;
+                    nuevo->cantidad_simbolos = 0;
+                    nuevo->capacidad_tabla = 0;
+                    nuevo->padre = entorno_actual;
+                    nuevo->id_entorno = contador_entornos++; 
+                    entorno_actual = nuevo; 
+                    imprimir_indentacion();
+                    fprintf(yyout_py, "def %s(", $2);
+                }
             } declaracion_variables_funcion ')' {
+                struct entrada_tabla *entrada = buscar_variable($2);
+                if (entrada == NULL){
+                    printf("Error semántico: la función '%s' no existe. Línea %d\n", $2, yylineno);
+                } else {
+                    entrada->cantidad_parametros_funcion = contador_parametros;
+                    // Copiar el buffer de tipos al arreglo dinámico de la entrada
+                    if (contador_parametros > 0) {
+                        entrada->tipos_parametros = (int *) malloc(contador_parametros * sizeof(int));
+                        for (int i = 0; i < contador_parametros; i++)
+                            entrada->tipos_parametros[i] = tipos_params_actuales[i];
+                    }
+                    contador_parametros = 0;
+                    free($2);
+                }
                 fprintf(yyout_py, "):\n");
                 nivel_indentacion++;
             } '{' instrucciones '}' {
@@ -604,77 +651,164 @@ parametro_void : tipo ID { //realmente es malo este nombre parametro_void, porqu
                 free(viejo);
             }
 
-            funcion_NO_void: prefijo_declaracion ID '(' { //estaba 'tipo' en vez de prefijo_declaracion, quilombo era
+            /* --- NUEVO PUNTO 3: funcion_NO_void con flexibildad de Returns --- */
+            funcion_NO_void: prefijo_declaracion ID '(' {
                 struct entrada_tabla *entrada = declarar_variable($2);
                 if (entrada == NULL){
-                    printf("Error semántico: la variable '%s' ya fue declarada.\n", $2);
+                    printf("Error semántico: la función '%s' ya fue declarada.\n", $2);
                 } else {
                     entrada->tipo_base = tipo_actual;
+                    entrada->es_funcion = 1;
                     entrada->id_entorno_declarado = entorno_actual->id_entorno;
-
                     if(es_constante_actual == 1) entrada->es_constante = 1;
                 }
                 struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
-                nuevo->tabla_simbolos = NULL;
-                nuevo->cantidad_simbolos = 0;
-                nuevo->capacidad_tabla = 0;
+                nuevo->tabla_simbolos = NULL; nuevo->cantidad_simbolos = 0; nuevo->capacidad_tabla = 0;
                 nuevo->padre = entorno_actual;
-                nuevo->id_entorno = contador_entornos++; 
-                entorno_actual = nuevo; 
+                nuevo->id_entorno = contador_entornos++;
+                entorno_actual = nuevo;
                 imprimir_indentacion();
                 fprintf(yyout_py, "def %s(", $2);
-                free($2);
             } declaracion_variables_funcion ')' {
+                struct entrada_tabla *entrada = buscar_variable($2);
+                if (entrada != NULL) {
+                    entrada->cantidad_parametros_funcion = contador_parametros;
+                    // Copiar el buffer de tipos al arreglo dinámico de la entrada
+                    if (contador_parametros > 0) {
+                        entrada->tipos_parametros = (int *) malloc(contador_parametros * sizeof(int));
+                        for (int i = 0; i < contador_parametros; i++)
+                            entrada->tipos_parametros[i] = tipos_params_actuales[i];
+                    }
+                }
+                contador_parametros = 0;
+                free($2);
                 fprintf(yyout_py, "):\n");
                 nivel_indentacion++;
-            } '{' instrucciones RETURN expresion ';' '}' { //debilidad, no puede haber más de 1 return, y encima el bloque de la funcion debe terminar sí o sí con un return
+            } '{' instrucciones '}' {
                 nivel_indentacion--;
                 struct Entorno *viejo = entorno_actual;
                 entorno_actual = entorno_actual->padre;
                 free(viejo);
             }
 
-
-
-
             llamar_funcion: ID '(' {
                 struct entrada_tabla *entrada = buscar_variable($1);
-                        if (entrada == NULL){
-                            printf("Error semántico: la variable '%s' no existe.\n", $1);
-                        }
+                if (entrada == NULL) {
+                    printf("Error semántico: la función '%s' no existe.\n", $1);
+                }
                 imprimir_indentacion();
                 fprintf(yyout_py, "%s(", $1);
-                free($1);
             } usar_variables_funcion ')' {
+                struct entrada_tabla *entrada = buscar_variable($1);
+                if (entrada != NULL && entrada->es_funcion) {
+                    if (contador_parametros != entrada->cantidad_parametros_funcion) {
+                        printf("[Error de Tipos] Línea %d: La función '%s' espera %d parámetro(s) pero se le pasaron %d.\n",
+                               yylineno, $1,
+                               entrada->cantidad_parametros_funcion,
+                               contador_parametros);
+                    } else if (entrada->tipos_parametros != NULL) {
+                        // Verificar el tipo de cada argumento posición a posición
+                        for (int i = 0; i < contador_parametros; i++) {
+                            if (!verificar_compatibilidad_tipos(
+                                    entrada->tipos_parametros[i],
+                                    tipos_args_actuales[i],
+                                    entrada->nombre,
+                                    yylineno)) {
+                                printf("  (parámetro %d: se esperaba '%s', se recibió '%s')\n",
+                                       i + 1,
+                                       nombre_tipo(entrada->tipos_parametros[i]),
+                                       nombre_tipo(tipos_args_actuales[i]));
+                            }
+                        }
+                    }
+                }
+                contador_parametros = 0;
+                free($1);
                 fprintf(yyout_py, ")\n");
             } ';'
             ;
 
             usar_variables_funcion : lista_parametros_llamar_funcion
-                          | /* vacío (por si la función no recibe parámetros) */
+                          | /* vacío */
                           ;
 
 lista_parametros_llamar_funcion : parametro_llamar_funcion
-                 | lista_parametros_llamar_funcion ',' { 
-                        // TRUCO: Imprimimos la coma y un espacio justo cuando Bison detecta el token ','
-                        fprintf(yyout_py, ", "); 
-                   } 
-                   parametro_llamar_funcion
+                 | lista_parametros_llamar_funcion ',' { fprintf(yyout_py, ", "); } parametro_llamar_funcion
     ;
 
     parametro_llamar_funcion : expresion { 
-        fprintf(yyout_py, "%s", $1->codigo); 
-        free($1->codigo); 
+        fprintf(yyout_py, "%s", $1->codigo);
+        // Guardar el tipo del argumento en el buffer de llamadas
+        if (contador_parametros < MAX_PARAMS)
+            tipos_args_actuales[contador_parametros] = $1->tipo_dato;
+        contador_parametros++;
+        free($1->codigo); free($1);
     }
     ;
 
-    volumen_array: NUMERO
-                    |
+    /* --- NUEVO PUNTO 3: Llamar a funciones dentro de asignaciones/if/while --- */
+    llamada_funcion_expr : ID '(' usar_variables_funcion_expr ')' {
+            $$ = malloc(sizeof(struct InfoExpresion));
+            struct entrada_tabla *entrada = buscar_variable($1);
+            // Verificar cantidad y tipos de parámetros
+            if (entrada != NULL && entrada->es_funcion) {
+                if (contador_parametros != entrada->cantidad_parametros_funcion) {
+                    printf("[Error de Tipos] Línea %d: La función '%s' espera %d parámetro(s) pero se le pasaron %d.\n",
+                           yylineno, $1,
+                           entrada->cantidad_parametros_funcion,
+                           contador_parametros);
+                } else if (entrada->tipos_parametros != NULL) {
+                    // Verificar el tipo de cada argumento posición a posición
+                    for (int i = 0; i < contador_parametros; i++) {
+                        if (!verificar_compatibilidad_tipos(
+                                entrada->tipos_parametros[i],
+                                tipos_args_actuales[i],
+                                entrada->nombre,
+                                yylineno)) {
+                            printf("  (parámetro %d: se esperaba '%s', se recibió '%s')\n",
+                                   i + 1,
+                                   nombre_tipo(entrada->tipos_parametros[i]),
+                                   nombre_tipo(tipos_args_actuales[i]));
+                        }
+                    }
+                }
+            }
+            contador_parametros = 0;
+            char buf[1024];
+            sprintf(buf, "%s(%s)", $1, $3);
+            $$->codigo = strdup(buf);
+            $$->tipo_dato = entrada ? entrada->tipo_base : T_INT;
+            free($1); free($3);
+    }
     ;
+
+    usar_variables_funcion_expr : lista_parametros_llamar_funcion_expr { $$ = $1; }
+                                | /* vacío */ { $$ = strdup(""); }
+                                ;
+
+    lista_parametros_llamar_funcion_expr : expresion { 
+            $$ = strdup($1->codigo);
+            // Guardar el tipo del argumento en el buffer de llamadas
+            if (contador_parametros < MAX_PARAMS)
+                tipos_args_actuales[contador_parametros] = $1->tipo_dato;
+            contador_parametros++;
+            free($1->codigo); free($1); 
+        }
+        | lista_parametros_llamar_funcion_expr ',' expresion { 
+            char buf[1024];
+            sprintf(buf, "%s, %s", $1, $3->codigo);
+            $$ = strdup(buf);
+            // Guardar el tipo del argumento en el buffer de llamadas
+            if (contador_parametros < MAX_PARAMS)
+                tipos_args_actuales[contador_parametros] = $3->tipo_dato;
+            contador_parametros++;
+            free($1); free($3->codigo); free($3);
+        }
+        ;
+
+    volumen_array: NUMERO | ;
     
-    dimension_array: '[' volumen_array ']' dimension_array
-                    | 
-    ;
+    dimension_array: '[' volumen_array ']' dimension_array | ;
 
     arrays: prefijo_declaracion ID '[' volumen_array ']' dimension_array asignacion_array ';' {
         struct entrada_tabla *entrada = declarar_variable($2);
@@ -683,7 +817,6 @@ lista_parametros_llamar_funcion : parametro_llamar_funcion
                 } else {
                     entrada->tipo_base = tipo_actual;
                     entrada->id_entorno_declarado = entorno_actual->id_entorno;
-
                     if(es_constante_actual == 1) entrada->es_constante = 1;
                     
                     imprimir_indentacion();
@@ -698,27 +831,19 @@ lista_parametros_llamar_funcion : parametro_llamar_funcion
     }
     ;
 
-    asignacion_array: '=' inicializador_array {
-                        $$ = strdup($2);
-                        free($2);
-                    }
-                    | /* vacío */ {
-                        $$ = NULL;
-                    }
+    asignacion_array: '=' inicializador_array { $$ = strdup($2); free($2); }
+                    | /* vacío */ { $$ = NULL; }
                     ;
 
-    // 1. La regla base del inicializador que encierra todo entre llaves
 inicializador_array:
     '{' lista_inicializadores '}'
     {
-        // En C entraron { y }, pero para Python armamos el string con [ y ]
         $$ = malloc(strlen($2) + 3);
         sprintf($$, "[%s]", $2);
         free($2);
     }
     ;
 
-// 2. Una lista de cosas separadas por comas (recursividad por la izquierda)
 lista_inicializadores:
     valor_o_anidado
     {
@@ -727,7 +852,6 @@ lista_inicializadores:
     }
     | lista_inicializadores ',' valor_o_anidado
     {
-        // Concatenamos lo que ya teníamos con el nuevo valor
         $$ = malloc(strlen($1) + strlen($3) + 3);
         sprintf($$, "%s, %s", $1, $3);
         free($1);
@@ -735,19 +859,14 @@ lista_inicializadores:
     }
     ;
 
-// 3. LA REGLA CLAVE: Un elemento puede ser un simple número/expresión, 
-// o puede ser OTRO array anidado.
 valor_o_anidado:
-    expresion // Tu regla actual que maneja NUMERO, ID, operaciones, etc.
-    {
+    expresion {
         $$ = strdup($1->codigo);
         free($1);
     }
-    | inicializador_array
-    {
+    | inicializador_array {
         $$ = strdup($1); 
         free($1);
-        // Ya viene con los corchetes [] armados desde inicializador_array
     }
     ;
 
@@ -760,24 +879,18 @@ void yyerror(const char *s) {
     fprintf(stderr, "Error sintáctico en la línea %d: %s\n", yylineno, s);
 }
 
-
-
-
 int main(int argc, char **argv) {                                       
         if (argc != 3) {                                                    
-            printf("Uso: %s <archivo_entrada.c> <archivo_salida.py>\n",     
-  argv[0]);                                                                 
+            printf("Uso: %s <archivo_entrada.c> <archivo_salida.py>\n", argv[0]);                                                                 
             return 1;                                                       
         }                                                                   
                                                                             
-        // 1. Abrimos el archivo .c de entrada y se lo pasamos a Lex        
         yyin = fopen(argv[1], "r");                                         
         if (!yyin) {                                                        
             printf("No se pudo abrir el archivo %s\n", argv[1]);            
             return 1;                                                       
         }                                                                   
                                                                             
-        // 2. Abrimos/creamos el archivo .py de salida                      
         yyout_py = fopen(argv[2], "w");                                     
         if (!yyout_py) {                                                    
             printf("No se pudo crear el archivo %s\n", argv[2]);            
@@ -785,7 +898,6 @@ int main(int argc, char **argv) {
             return 1;                                                       
         }                                                                   
                                                                             
-        // 3. Iniciamos el proceso de análisis
         entorno_actual = (struct Entorno *) malloc(sizeof(struct Entorno));
         entorno_actual->tabla_simbolos = NULL;
         entorno_actual->cantidad_simbolos = 0;
@@ -796,8 +908,7 @@ int main(int argc, char **argv) {
         yyparse();                                                          
         printf("Compilacion finalizada.\n");                                
                                                                             
-        // 4. Cerramos los archivos                                         
         fclose(yyin);                                                       
         fclose(yyout_py);                                                   
         return 0;                                                           
-    }          
+}

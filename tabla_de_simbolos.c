@@ -9,17 +9,18 @@
 #define T_DOUBLE 5
 
 int contador_entornos = 0;
+
 // 1. Definimos cómo es una "fila" de nuestra planilla (el struct)
 struct entrada_tabla {
-    char *nombre;        // Nombre de la variable (ej: "mi_puntero")
-    int tipo_base;       // T_INT, T_CHAR, T_FLOAT, etc.
+    char *nombre;        // Nombre de la variable/función (ej: "mi_var")
+    int tipo_base;       // T_INT, T_CHAR, T_FLOAT, etc. 
+                         // En funciones: tipo de retorno
     int es_constante;    // 0 = variable, 1 = constante
-    int cant_asteriscos; // 0 = normal, 1 = *, 2 = **, etc.
-    int es_unsigned;     // 0 = signed (por defecto), 1 = unsigned
-    int es_long;         // 0 = normal, 1 = long, 2 = long long
-    int es_short;
     int id_entorno_declarado;
-    
+    int es_funcion;                   // 0 = variable normal, 1 = función
+    int cantidad_parametros_funcion;  // Solo válido si es_funcion == 1
+    int *tipos_parametros;            // Arreglo dinámico con el tipo de cada parámetro
+                                      // ej: {T_INT, T_FLOAT} para (int a, float b)
 };
 
 struct Entorno {
@@ -81,29 +82,72 @@ struct entrada_tabla *declarar_variable(char *nombre_buscado) {
         }
     }
 
-    //Como no existe la variable dentro de la tabla,la CREAMOS
+    // Como no existe la variable dentro de la tabla, la CREAMOS
     struct entrada_tabla *nueva_fila = &entorno_actual->tabla_simbolos[entorno_actual->cantidad_simbolos];
     nueva_fila->nombre = strdup(nombre_buscado); // Guardamos el nombre (una sola vez)
-    nueva_fila->tipo_base = 0;       // Corregido: tipo_base en vez de tipo
-    nueva_fila->es_constante = 0;    // Por defecto no es constante
-    nueva_fila->cant_asteriscos = 0; // Por defecto es variable normal (no puntero)
-    nueva_fila->es_unsigned = 0;     // Por defecto es signed
-    nueva_fila->es_long = 0;         // Por defecto no es long
-    nueva_fila->es_short = 0;        // Por defecto no es short
+    nueva_fila->tipo_base = 0;                    // Se seteará luego con el tipo declarado
+    nueva_fila->es_constante = 0;                 // Por defecto no es constante
+    nueva_fila->es_funcion = 0;                   // Por defecto es variable normal
+    nueva_fila->cantidad_parametros_funcion = 0;  // Solo relevante para funciones
+    nueva_fila->tipos_parametros = NULL;           // Se llenará al terminar de parsear la firma
+    nueva_fila->id_entorno_declarado = 0;
     /*
-    pregunté por qué es necesario declarar qué valores tienen los campos del
-    estruct:
-    si en el codigo se declara int x; yacc pondrá que es un entero,
-    Qué pasa con los otros campos del struct, y Como nadie los puso en 0, 
-    el campo cant_asteriscos va a tener cualquier 
-    número loco que hubiera en la RAM (por ejemplo, 32764). 
-    Cuando más adelante intentes sumar variables, 
-    tu compilador va a mirar la tabla, va a ver ese número y 
-    va a decir: "¡Epa! x no es un entero normal, 
-    ¡es un puntero con 32.764 asteriscos!", y te va a 
-    tirar errores semánticos por todos lados.*/
-
+    Es importante inicializar todos los campos del struct en 0/NULL:
+    Si en el codigo se declara "int x;" yacc pondrá que es un entero,
+    pero si los otros campos quedan sin inicializar, tendrán basura de la RAM.
+    Inicializarlos explícitamente evita errores semánticos falsos.
+    */
 
     entorno_actual->cantidad_simbolos++; // Ahora tenemos una fila más ocupada
     return nueva_fila; // Devolvemos el puntero a la nueva fila creada
+}
+
+/* 
+   Función auxiliar para obtener el nombre legible de un tipo.
+   Útil para mensajes de error en comprobación de tipos.
+*/
+const char *nombre_tipo(int tipo) {
+    switch (tipo) {
+        case T_VOID:   return "void";
+        case T_CHAR:   return "char";
+        case T_INT:    return "int";
+        case T_FLOAT:  return "float";
+        case T_DOUBLE: return "double";
+        default:       return "desconocido";
+    }
+}
+
+/*
+   Verifica si el tipo de una expresión es compatible con el tipo declarado
+   de una variable. Emite warning si hay pérdida de precisión (ej: float -> int).
+   Retorna 1 si es compatible (aunque con warning), 0 si es incompatible.
+*/
+int verificar_compatibilidad_tipos(int tipo_destino, int tipo_origen, const char *nombre_var, int lineno) {
+    // Mismo tipo: siempre OK
+    if (tipo_destino == tipo_origen) return 1;
+
+    // Conversiones numéricas: int, float, double son todos compatibles entre sí,
+    // pero si el destino tiene MENOS precisión, emitimos un warning.
+    int es_numerico_destino = (tipo_destino == T_INT || tipo_destino == T_FLOAT || tipo_destino == T_DOUBLE);
+    int es_numerico_origen  = (tipo_origen  == T_INT || tipo_origen  == T_FLOAT || tipo_origen  == T_DOUBLE);
+
+    if (es_numerico_destino && es_numerico_origen) {
+        if (tipo_destino < tipo_origen) {
+            // Pérdida de precisión: ej. int x = 3.14 (float -> int)
+            printf("[Warning] Línea %d: Posible pérdida de precisión al asignar '%s' (tipo %s) con un valor de tipo %s.\n",
+                   lineno, nombre_var, nombre_tipo(tipo_destino), nombre_tipo(tipo_origen));
+        }
+        return 1; // Compatible (con o sin warning)
+    }
+
+    // char es compatible con int (promoción implícita en C)
+    if ((tipo_destino == T_CHAR && tipo_origen == T_INT) ||
+        (tipo_destino == T_INT  && tipo_origen == T_CHAR)) {
+        return 1;
+    }
+
+    // Cualquier otra combinación: incompatible
+    printf("[Error de Tipos] Línea %d: No se puede asignar un valor de tipo '%s' a la variable '%s' (tipo '%s').\n",
+           lineno, nombre_tipo(tipo_origen), nombre_var, nombre_tipo(tipo_destino));
+    return 0;
 }

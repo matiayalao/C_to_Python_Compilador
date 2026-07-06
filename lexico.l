@@ -40,8 +40,11 @@ numero  {digito}+(\.{digito}+)?
 "*"         { return('*'); }
 "="         { return('='); }
 "=="        { return(IGUAL_IGUAL); }                                 
+"!="        { return(NO_IGUAL); }
 "<="        { return(MENOR_IGUAL); }                                 
-">="        { return(MAYOR_IGUAL); }                                 
+">="        { return(MAYOR_IGUAL); }
+"&&"        { return(AND); }
+"||"        { return(OR); }                                 
 ";"         { return(';'); }
 ","         { return(','); }
 "+"         { return('+'); }                                  
@@ -51,6 +54,9 @@ numero  {digito}+(\.{digito}+)?
 "("         { return('('); }
 ")"         { return(')'); }
 ":"         { return(':'); }
+"!"         { return('!'); }
+"%"         { return('%'); }
+"/"         { return('/'); }
 
 .           { printf("Error léxico: caracter inválido %s\n", yytext); }
 %%

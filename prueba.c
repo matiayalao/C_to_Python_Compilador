@@ -2,12 +2,12 @@
 
 	int i = 20, t = 20 + 4,x,y = 20;
 	float floa = 31.4, ggg = 3.1;
-	for(int i = 0, y = 20; i; i++){
+	for(int i = 0, y = 20; i < 20; i++){
 		int z = 90;
 		int h = 3;
 	}
 
-	float suma = floa * z;
+
 
 	while(i){
 		int e = x + y;
@@ -39,6 +39,10 @@ void funcion(int g, float h){
 
 }
 
+
+
+
+
 int tocha(){
 
 
@@ -48,7 +52,7 @@ int tocha(){
 	return i + 20;
 }
 
-tocha(x + y);
+tocha();
 
 
 const int hola[2][4] = { {1,2,3,4},{2,2,2}};

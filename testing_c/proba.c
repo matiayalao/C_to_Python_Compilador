@@ -3,6 +3,12 @@ int g = 20;
 
 void funcion(int a){
 	printf("En efecto, entramos, %d",g);
+
+}
+
+int funcion(float b){
+
+	printf("Holi\n");
 }
 
 int main(){
@@ -24,4 +30,6 @@ int main(){
 	return 0;
 }
 
-
+{
+	printf("Hola");
+}
