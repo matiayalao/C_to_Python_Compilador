@@ -81,6 +81,10 @@ programa: instrucciones
 
 instrucciones : instrucciones instruccion 
              | /* vacío (regla lambda) */
+             | error ';' {
+                printf("[Error Sintáctico] Línea %d: Instrucción mal formada. Ignorando hasta encontrar un ';'.\n", yylineno);
+                yyerrok; // Le indicamos a Bison que nos hemos recuperado del error
+           }
              ;
 
 instruccion : declaracion 
@@ -105,6 +109,10 @@ instruccion : declaracion
 declaracion : prefijo_declaracion declarar_lista_ids ';' { es_constante_actual = 0; }
             | CONST declarar_lista_ids ';' {
                 printf("[Error de Sintaxis] Línea %d: Definiste una constante pero omitiste el tipo de dato (ej: const int ...).\n", yylineno);
+            }
+            | prefijo_declaracion error ';' {
+                printf("[Error Sintáctico] Línea %d: Declaración inválida. Revisá la lista de identificadores o la inicialización.\n", yylineno);
+                yyerrok;
             }
             | ';'
             ;
@@ -211,6 +219,11 @@ asignacion_unitaria : ID '=' expresion {
                         }
                         free($1); free($3->codigo); free($3);
                     }
+                    | ID '=' error {
+                        printf("[Error Sintáctico] Línea %d: Asignación inválida para '%s'. Falta o está mal formada la expresión del lado derecho.\n", yylineno, $1);
+                        free($1);
+                        yyerrok;
+                    }
                     /* --- NUEVO PUNTO 1: Permitir setear un array ej. matriz[0][1] = 5 --- */
                     | ID accesos_array '=' expresion {
                         struct entrada_tabla *entrada = buscar_variable($1);
@@ -262,12 +275,19 @@ accesos_array : '[' expresion ']' {
                     $$ = strdup(buf);
                     free($2->codigo); free($2);
                 }
+                
               | accesos_array '[' expresion ']' {
                     char buf[512];
                     sprintf(buf, "%s[%s]", $1, $3->codigo);
                     $$ = strdup(buf);
                     free($1); free($3->codigo); free($3);
                 }
+                | '[' error ']' {
+                    printf("[Error Sintáctico] Línea %d: Índice de array inválido.\n", yylineno);
+                    // Asignamos un índice seguro "[0]" para que la traducción a Python no se rompa
+                    $$ = strdup("[0]"); 
+                    yyerrok;
+              }
               ;
 
 loop : FOR {
@@ -305,6 +325,10 @@ condicion_loop : expresion '=' expresion {
                     nivel_indentacion++;
                     free($1->codigo); free($1);
             }
+            |  error {
+                    printf("[Error Sintáctico] Línea %d: Condición de bucle inválida.\n", yylineno);
+                    yyerrok;
+                }
             ;
 
 loop_consecuencia: ID { $$ = strdup(""); }
@@ -568,6 +592,10 @@ expresion : ID {
                     fprintf(yyout_py, "%s", $1->codigo);
                     free($1->codigo); free($1);
             }
+            | error {
+                    printf("[Error Sintáctico] Línea %d: Condición de 'if' inválida.\n", yylineno);
+                    yyerrok;
+            }
             ;
 
 declaracion_variables_funcion : lista_parametros
@@ -594,6 +622,10 @@ parametro_void : tipo ID {
                 }
                 free($2);
           }
+          | ID '(' error ')' ';' {
+                    printf("[Error Sintáctico] Línea %d: Error en los parámetros de la función '%s'.\n", yylineno, $1);
+                    yyerrok;
+               }
           ;
 
             funcion_void: VOID ID '(' {
@@ -715,7 +747,7 @@ parametro_void : tipo ID {
             ;
 
             usar_variables_funcion : lista_parametros_llamar_funcion
-                          | /* vacío */
+                          | /* vacío */ { $$ = strdup(""); }
                           ;
 
 lista_parametros_llamar_funcion : parametro_llamar_funcion
@@ -889,6 +921,7 @@ int main(int argc, char **argv) {
         entorno_actual->cantidad_simbolos = 0;
         entorno_actual->capacidad_tabla = 0;
         entorno_actual->padre = NULL;
+        entorno_actual->id_entorno = contador_entornos++;
 
         printf("Iniciando compilacion de %s a %s...\n", argv[1], argv[2]);  
         yyparse();                                                          
