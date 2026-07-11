@@ -3,16 +3,20 @@
 %}
 
 %option yylineno
+%option noyywrap
 delim   [ \t\n]
 ws      {delim}+
 letra   [A-Za-z_]
 digito  [0-9]
 id      {letra}({letra}|{digito})*
 numero  {digito}+(\.{digito}+)?
+caracter \'([^\\'\n]|\\[nrt0\\'])\'
 
 
 %%
 {ws}        { /* Ignorar espacios en blanco */ }
+"//".*      { /* Ignorar comentarios de una linea */ }
+"/*"([^*]|\*+[^*/])*\*+"/"    { /* Ignorar comentarios de bloque */ }
 
 "if"        { return(IF); }
 "else"      { return(ELSE); }
@@ -26,10 +30,12 @@ numero  {digito}+(\.{digito}+)?
 
 "int"       { return(INT); }
 "float"     { return(FLOAT); }
+"double"    { return(DOUBLE); }
 "char"      { return(CHAR); }
 "const"     { return(CONST); }
 "void"      { return(VOID); }
 
+{caracter}  { yylval.nombre = strdup(yytext); return(CARACTER); }
 {id}        { yylval.nombre = strdup(yytext); return(ID); }
 {numero}    { yylval.val_num = atof(yytext); return(NUMERO); }
 
