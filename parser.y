@@ -42,7 +42,24 @@ int max_tipo(int t1, int t2) {
 struct InfoExpresion {
         char *codigo;
         int tipo_dato; 
+        int es_constante;
     };
+
+void entrar_entorno() {
+    struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
+    nuevo->tabla_simbolos = NULL;
+    nuevo->cantidad_simbolos = 0;
+    nuevo->capacidad_tabla = 0;
+    nuevo->padre = entorno_actual;
+    nuevo->id_entorno = contador_entornos++;
+    entorno_actual = nuevo;
+}
+
+void salir_entorno() {
+    struct Entorno *viejo = entorno_actual;
+    entorno_actual = entorno_actual->padre;
+    free(viejo);
+}
 
 %}
 
@@ -55,6 +72,7 @@ struct InfoExpresion {
 %token IF ELSE WHILE RETURN INT FLOAT CHAR CONST DOUBLE FOR SWITCH CASE VOID
 %token MAYOR_IGUAL IGUAL_IGUAL MENOR_IGUAL NO_IGUAL BREAK DEFAULT AND OR
 %token <nombre> ID
+%token <nombre> CARACTER
 %token <val_num> NUMERO 
 %type <nombre> loop_consecuencia
 %type <nombre> inicializador_array lista_inicializadores valor_o_anidado asignacion_array accesos_array
@@ -291,11 +309,7 @@ accesos_array : '[' expresion ']' {
               ;
 
 loop : FOR {
-            struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
-            nuevo->tabla_simbolos = NULL; nuevo->cantidad_simbolos = 0; nuevo->capacidad_tabla = 0;
-            nuevo->padre = entorno_actual; 
-            nuevo->id_entorno = contador_entornos++;
-            entorno_actual = nuevo;   
+            entrar_entorno();
 }'('for_init condicion_loop';' loop_consecuencia')' '{' instrucciones '}'{
             if ($7 && strlen($7) > 0) {
                 imprimir_indentacion();
@@ -303,12 +317,11 @@ loop : FOR {
                 free($7);
             }
             nivel_indentacion--; 
-            struct Entorno *viejo = entorno_actual;
-            entorno_actual = entorno_actual->padre;
-            free(viejo);
+            salir_entorno();
     }
-    | WHILE '(' condicion_loop ')''{' instrucciones '}' {    
+    | WHILE '(' condicion_loop ')'{ entrar_entorno(); }'{' instrucciones '}' {
         nivel_indentacion--;
+        salir_entorno();
     }
     ;
 
@@ -366,11 +379,13 @@ expresion : ID {
                     printf("Error semántico: '%s' no declarada.\n", $1);
                     $$->codigo = strdup($1); 
                     $$->tipo_dato = T_INT; 
+                    $$->es_constante = 0;
                 } else {
                     char buf[100];
                     sprintf(buf, "%s_%d", entrada->nombre, entrada->id_entorno_declarado);
                     $$->codigo = strdup(buf);
                     $$->tipo_dato = entrada->tipo_base;
+                    $$->es_constante = 0;
                 }
                 free($1);
           }
@@ -382,11 +397,13 @@ expresion : ID {
                     printf("Error semántico: '%s' (array) no declarada.\n", $1);
                     $$->codigo = strdup($1); 
                     $$->tipo_dato = T_INT;
+                    $$->es_constante = 0;
                 } else {
                     char buf[512];
                     sprintf(buf, "%s_%d%s", entrada->nombre, entrada->id_entorno_declarado, $2);
                     $$->codigo = strdup(buf);
                     $$->tipo_dato = entrada->tipo_base;
+                    $$->es_constante = 0;
                 }
                 free($1); free($2);
           }
@@ -405,6 +422,14 @@ expresion : ID {
                 } else {
                     $$->tipo_dato = T_INT;
                 }
+                $$->es_constante = 1;
+          }
+          | CARACTER {
+                $$ = malloc(sizeof(struct InfoExpresion));
+                $$->codigo = strdup($1);
+                $$->tipo_dato = T_CHAR;
+                $$->es_constante = 1;
+                free($1);
           }
           | expresion '+' expresion {
                 $$ = malloc(sizeof(struct InfoExpresion));
@@ -413,6 +438,7 @@ expresion : ID {
                 $$->codigo = strdup(buf);
                 /* --- NUEVO PUNTO 2: Promoción de tipos automática --- */
                 $$->tipo_dato = max_tipo($1->tipo_dato, $3->tipo_dato); 
+                $$->es_constante = $1->es_constante && $3->es_constante;
                 free($1->codigo); free($1); free($3->codigo); free($3);
           }
           | expresion '-' expresion {
@@ -421,6 +447,7 @@ expresion : ID {
                 sprintf(buf, "%s - %s", $1->codigo, $3->codigo);
                 $$->codigo = strdup(buf);
                 $$->tipo_dato = max_tipo($1->tipo_dato, $3->tipo_dato);
+                $$->es_constante = $1->es_constante && $3->es_constante;
                 free($1->codigo); free($1); free($3->codigo); free($3);
           }
           | expresion '*' expresion {
@@ -429,6 +456,7 @@ expresion : ID {
                 sprintf(buf, "%s * %s", $1->codigo, $3->codigo);
                 $$->codigo = strdup(buf);
                 $$->tipo_dato = max_tipo($1->tipo_dato, $3->tipo_dato);
+                $$->es_constante = $1->es_constante && $3->es_constante;
                 free($1->codigo); free($1); free($3->codigo); free($3);
           }
           /* --- NUEVO PUNTO 5: División, Modulo y Lógicos/Relacionales --- */
@@ -438,6 +466,7 @@ expresion : ID {
                 sprintf(buf, "%s / %s", $1->codigo, $3->codigo);
                 $$->codigo = strdup(buf);
                 $$->tipo_dato = max_tipo($1->tipo_dato, $3->tipo_dato);
+                $$->es_constante = $1->es_constante && $3->es_constante;
                 free($1->codigo); free($1); free($3->codigo); free($3);
           }
           | expresion '%' expresion {
@@ -446,6 +475,7 @@ expresion : ID {
                 sprintf(buf, "%s %% %s", $1->codigo, $3->codigo);
                 $$->codigo = strdup(buf);
                 $$->tipo_dato = T_INT;
+                $$->es_constante = $1->es_constante && $3->es_constante;
                 free($1->codigo); free($1); free($3->codigo); free($3);
           }
           | expresion AND expresion {
@@ -454,6 +484,7 @@ expresion : ID {
                 sprintf(buf, "%s and %s", $1->codigo, $3->codigo); // Traduccion a python "and"
                 $$->codigo = strdup(buf);
                 $$->tipo_dato = T_INT;
+                $$->es_constante = $1->es_constante && $3->es_constante;
                 free($1->codigo); free($1); free($3->codigo); free($3);
           }
           | expresion OR expresion {
@@ -462,6 +493,7 @@ expresion : ID {
                 sprintf(buf, "%s or %s", $1->codigo, $3->codigo); // Traduccion a python "or"
                 $$->codigo = strdup(buf);
                 $$->tipo_dato = T_INT;
+                $$->es_constante = $1->es_constante && $3->es_constante;
                 free($1->codigo); free($1); free($3->codigo); free($3);
           }
           | '!' expresion {
@@ -470,36 +502,37 @@ expresion : ID {
                 sprintf(buf, "not %s", $2->codigo); // Traduccion a python "not"
                 $$->codigo = strdup(buf);
                 $$->tipo_dato = T_INT;
+                $$->es_constante = $2->es_constante;
                 free($2->codigo); free($2);
           }
           | expresion '>' expresion {
                 $$ = malloc(sizeof(struct InfoExpresion)); char buf[256];
-                sprintf(buf, "%s > %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT;
+                sprintf(buf, "%s > %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT; $$->es_constante = $1->es_constante && $3->es_constante;
                 free($1->codigo); free($1); free($3->codigo); free($3);
           }
           | expresion '<' expresion {
                 $$ = malloc(sizeof(struct InfoExpresion)); char buf[256];
-                sprintf(buf, "%s < %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT;
+                sprintf(buf, "%s < %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT; $$->es_constante = $1->es_constante && $3->es_constante;
                 free($1->codigo); free($1); free($3->codigo); free($3);
           }
           | expresion IGUAL_IGUAL expresion {
                 $$ = malloc(sizeof(struct InfoExpresion)); char buf[256];
-                sprintf(buf, "%s == %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT;
+                sprintf(buf, "%s == %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT; $$->es_constante = $1->es_constante && $3->es_constante;
                 free($1->codigo); free($1); free($3->codigo); free($3);
           }
           | expresion NO_IGUAL expresion {
                 $$ = malloc(sizeof(struct InfoExpresion)); char buf[256];
-                sprintf(buf, "%s != %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT;
+                sprintf(buf, "%s != %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT; $$->es_constante = $1->es_constante && $3->es_constante;
                 free($1->codigo); free($1); free($3->codigo); free($3);
           }
           | expresion MAYOR_IGUAL expresion {
                 $$ = malloc(sizeof(struct InfoExpresion)); char buf[256];
-                sprintf(buf, "%s >= %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT;
+                sprintf(buf, "%s >= %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT; $$->es_constante = $1->es_constante && $3->es_constante;
                 free($1->codigo); free($1); free($3->codigo); free($3);
           }
           | expresion MENOR_IGUAL expresion {
                 $$ = malloc(sizeof(struct InfoExpresion)); char buf[256];
-                sprintf(buf, "%s <= %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT;
+                sprintf(buf, "%s <= %s", $1->codigo, $3->codigo); $$->codigo = strdup(buf); $$->tipo_dato = T_INT; $$->es_constante = $1->es_constante && $3->es_constante;
                 free($1->codigo); free($1); free($3->codigo); free($3);
           }
           | '(' expresion ')' {
@@ -508,6 +541,7 @@ expresion : ID {
                 sprintf(buf, "(%s)", $2->codigo);
                 $$->codigo = strdup(buf);
                 $$->tipo_dato = $2->tipo_dato; 
+                $$->es_constante = $2->es_constante;
                 free($2->codigo); free($2);
           }
           ;
@@ -518,8 +552,10 @@ expresion : ID {
         } condicion_IF ')' {
             fprintf(yyout_py, ":\n");
             nivel_indentacion++;
+            entrar_entorno();
         } '{' instrucciones '}' { 
             nivel_indentacion--;
+            salir_entorno();
         } bloque_else
         | SWITCH '(' expresion ')' {
             
@@ -527,9 +563,11 @@ expresion : ID {
             imprimir_indentacion();
             fprintf(yyout_py, "match %s:\n", $3->codigo);
             nivel_indentacion++;
+            entrar_entorno();
             free($3);
         } switch_cases '}' {
             nivel_indentacion--;
+            salir_entorno();
         }
         ;
 
@@ -540,31 +578,36 @@ expresion : ID {
            condicion_IF ')' { 
                 fprintf(yyout_py, ":\n"); 
                 nivel_indentacion++;
+                entrar_entorno();
            } 
            '{' instrucciones '}' {
                 nivel_indentacion--;
+                salir_entorno();
            } bloque_else
          
          | ELSE { 
                 imprimir_indentacion(); 
                 fprintf(yyout_py, "else:\n"); 
                 nivel_indentacion++;
+                entrar_entorno();
            } 
            '{' instrucciones '}' {
                 nivel_indentacion--;
+                salir_entorno();
            }
          
          | /* vacío */
          ;
 
     switch_cases: CASE expresion ':'{
-                    if (strchr($2->codigo, '_') != NULL) {
+                    int case_valido = $2->es_constante;
+                    if (!case_valido) {
                         printf("[Error Semántico] Línea %d: El valor del 'case' debe ser una constante, no una variable ('%s').\n", yylineno, $2->codigo);
                     }
                     imprimir_indentacion();
-                    fprintf(yyout_py, "case %s:\n", $2->codigo);
+                    fprintf(yyout_py, "case %s:\n", case_valido ? $2->codigo : "\"__invalid_case__\"");
                     nivel_indentacion++; 
-                    free($2);
+                    free($2->codigo); free($2);
     } instrucciones BREAK ';' {
         nivel_indentacion--;
     } switch_cases
@@ -635,13 +678,7 @@ parametro_void : tipo ID {
                 } else {
                     entrada->tipo_base = T_VOID;
                     entrada->es_funcion = 1;
-                    struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
-                    nuevo->tabla_simbolos = NULL;
-                    nuevo->cantidad_simbolos = 0;
-                    nuevo->capacidad_tabla = 0;
-                    nuevo->padre = entorno_actual;
-                    nuevo->id_entorno = contador_entornos++; 
-                    entorno_actual = nuevo; 
+                    entrar_entorno();
                     imprimir_indentacion();
                     fprintf(yyout_py, "def %s(", $2);
                 }
@@ -664,9 +701,7 @@ parametro_void : tipo ID {
                 nivel_indentacion++;
             } '{' instrucciones '}' {
                 nivel_indentacion--;
-                struct Entorno *viejo = entorno_actual;
-                entorno_actual = entorno_actual->padre;
-                free(viejo);
+                salir_entorno();
             }
 
             /* --- NUEVO PUNTO 3: funcion_NO_void con flexibildad de Returns --- */
@@ -680,11 +715,7 @@ parametro_void : tipo ID {
                     entrada->id_entorno_declarado = entorno_actual->id_entorno;
                     if(es_constante_actual == 1) entrada->es_constante = 1;
                 }
-                struct Entorno *nuevo = (struct Entorno *) malloc(sizeof(struct Entorno));
-                nuevo->tabla_simbolos = NULL; nuevo->cantidad_simbolos = 0; nuevo->capacidad_tabla = 0;
-                nuevo->padre = entorno_actual;
-                nuevo->id_entorno = contador_entornos++;
-                entorno_actual = nuevo;
+                entrar_entorno();
                 imprimir_indentacion();
                 fprintf(yyout_py, "def %s(", $2);
             } declaracion_variables_funcion ')' {
@@ -704,9 +735,7 @@ parametro_void : tipo ID {
                 nivel_indentacion++;
             } '{' instrucciones '}' {
                 nivel_indentacion--;
-                struct Entorno *viejo = entorno_actual;
-                entorno_actual = entorno_actual->padre;
-                free(viejo);
+                salir_entorno();
             }
 
             llamar_funcion: ID '(' {
@@ -769,7 +798,11 @@ lista_parametros_llamar_funcion : parametro_llamar_funcion
             $$ = malloc(sizeof(struct InfoExpresion));
             struct entrada_tabla *entrada = buscar_variable($1);
             // Verificar cantidad y tipos de parámetros
-            if (entrada != NULL && entrada->es_funcion) {
+            if (entrada == NULL) {
+                printf("Error semantico: la funcion '%s' no existe.\n", $1);
+            } else if (!entrada->es_funcion) {
+                printf("Error semantico: '%s' no es una funcion.\n", $1);
+            } else {
                 if (contador_parametros != entrada->cantidad_parametros_funcion) {
                     printf("[Error de Tipos] Línea %d: La función '%s' espera %d parámetro(s) pero se le pasaron %d.\n",
                            yylineno, $1,
@@ -795,7 +828,8 @@ lista_parametros_llamar_funcion : parametro_llamar_funcion
             char buf[1024];
             sprintf(buf, "%s(%s)", $1, $3);
             $$->codigo = strdup(buf);
-            $$->tipo_dato = entrada ? entrada->tipo_base : T_INT;
+            $$->tipo_dato = (entrada && entrada->es_funcion) ? entrada->tipo_base : T_INT;
+            $$->es_constante = 0;
             free($1); free($3);
     }
     ;

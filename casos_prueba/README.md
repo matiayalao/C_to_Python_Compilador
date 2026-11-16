@@ -3,13 +3,13 @@
 Estos archivos estan separados en casos exitosos y casos con errores. 
 ## Como ejecutar
 
-Desde la raiz del proyecto:
+Abrir la terminal **MSYS2 UCRT64** y ubicarse en la raiz del proyecto:
 
 ```bash
 lex lexico.l
 yacc parser.y
-cc y.tab.c -ly -lfl -o compilador
-./compilador casos_prueba/exitosos/01_variables_condicionales_loops.c salida.py
+gcc y.tab.c -o compilador.exe
+./compilador.exe casos_prueba/exitosos/01_variables_condicionales_loops.c salida.py
 ```
 
 Para probar todos manualmente, cambiar el archivo de entrada por cualquiera de los `.c` listados abajo.
@@ -64,6 +64,19 @@ Resultado esperado:
 - No deberia emitir errores.
 - Debe traducir el `switch` usando `match`.
 - La variable local del `for` debe quedar con el sufijo del entorno del ciclo.
+
+### `exitosos/04_tipos_y_comentarios.c`
+
+Funcionalidades probadas:
+
+- Tipo `double`.
+- Literales de tipo `char`.
+- Comentarios de una linea y de bloque.
+
+Resultado esperado:
+
+- No deberia emitir errores.
+- Debe generar un `.py` con los valores equivalentes y sin los comentarios de entrada.
 
 ## Casos con errores
 
@@ -195,3 +208,25 @@ Mensaje esperado:
 ```
 
 Nota: tambien puede aparecer antes `Error sintáctico en la línea 2: syntax error`.
+
+### `con_errores/11_funcion_no_declarada_expr.c`
+
+Error probado:
+
+- Llamada a una funcion inexistente dentro de una expresion.
+
+Mensaje esperado:
+
+```text
+Error semantico: la funcion 'foo' no existe.
+```
+
+### `con_errores/12_scope_bloques.c`
+
+Error probado:
+
+- Uso de variables declaradas dentro de bloques `while`, `if/else` y `switch` fuera de su entorno.
+
+Resultado esperado:
+
+- Debe informar que `dentro_while`, `dentro_if`, `dentro_else` y `dentro_switch` no existen al intentar utilizarlas fuera de sus respectivos bloques.
